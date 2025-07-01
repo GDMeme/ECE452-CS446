@@ -1,10 +1,11 @@
 package com.example.schedula.ui
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -14,15 +15,16 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 
 @Composable
-fun LoginScreen() {
-    var text by remember { mutableStateOf(TextFieldValue("")) }
+fun LoginScreen(navController: NavController) {
+    var username by remember { mutableStateOf(TextFieldValue("")) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFEFF4F9)) // Light blue background
+            .background(Color(0xFFEFF4F9)) // light blue background
             .padding(horizontal = 24.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -56,14 +58,14 @@ fun LoginScreen() {
             Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
+                value = username,
+                onValueChange = { username = it },
                 label = { Text("Label") },
                 placeholder = { Text("Input") },
                 trailingIcon = {
-                    if (text.text.isNotEmpty()) {
-                        IconButton(onClick = { text = TextFieldValue("") }) {
-                            Icon(imageVector = Icons.Default.Clear, contentDescription = "Clear")
+                    if (username.text.isNotEmpty()) {
+                        IconButton(onClick = { username = TextFieldValue("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear")
                         }
                     }
                 },
@@ -74,7 +76,11 @@ fun LoginScreen() {
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { /* Handle login */ },
+                onClick = {
+                    if (username.text.isNotBlank()) {
+                        navController.navigate("questionnaire")
+                    }
+                },
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
