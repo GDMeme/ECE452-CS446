@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.*
 import com.example.schedula.ui.LoginScreen
 import com.example.schedula.ui.QuestionnaireScreen
+import com.example.schedula.ui.ScheduleUploadScreen
 import com.example.schedula.ui.theme.SchedulaTheme
 import com.example.schedula.ui.SignUpScreen
 
@@ -37,6 +38,9 @@ fun SchedulaApp() {
         }
         composable("signup") {
             SignUpScreen(navController)
+        }
+        composable("scheduleUpload") {
+            ScheduleUploadScreen(navController, {}) //make callback function empty for now
         }
     }
 }
