@@ -8,6 +8,7 @@ import androidx.navigation.compose.*
 import com.example.schedula.ui.LoginScreen
 import com.example.schedula.ui.QuestionnaireScreen
 import com.example.schedula.ui.theme.SchedulaTheme
+import com.example.schedula.ui.SignUpScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,6 +34,9 @@ fun SchedulaApp() {
         }
         composable("questionnaire") {
             QuestionnaireScreen(navController)
+        }
+        composable("signup") {
+            SignUpScreen(navController)
         }
     }
 }

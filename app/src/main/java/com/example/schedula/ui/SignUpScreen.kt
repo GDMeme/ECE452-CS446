@@ -2,16 +2,19 @@ package com.example.schedula.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
@@ -20,22 +23,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.sp
 import com.example.schedula.AuthenticationRepo
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun SignUpScreen(navController: NavController) {
     var email by remember { mutableStateOf(TextFieldValue("")) }
+    var name by remember { mutableStateOf(TextFieldValue("")) }
     var password by remember { mutableStateOf(TextFieldValue("")) }
     var pwVisible by remember { mutableStateOf(false) }
     var context = LocalContext.current
-
-    //need to figure out how todo all the validation checking
-    //ex: email must have @uwaterloo.ca & password should have a minimum length
 
     Box(
         modifier = Modifier
@@ -58,7 +54,7 @@ fun LoginScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Enter University Credentials",
+                text = "Create An Account",
                 fontSize = 20.sp,
                 color = Color.Black
             )
@@ -72,6 +68,26 @@ fun LoginScreen(navController: NavController) {
             )
 
             Spacer(modifier = Modifier.height(24.dp))
+
+            //add a parameter for Name
+
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Name") },
+                placeholder = { Text("Your Name") },
+                trailingIcon = {
+                    if (name.text.isNotEmpty()) {
+                        IconButton(onClick = { name = TextFieldValue("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear")
+                        }
+                    }
+                },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = email,
@@ -95,16 +111,15 @@ fun LoginScreen(navController: NavController) {
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Password") },
-                visualTransformation = if(pwVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (pwVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     val icon = if (pwVisible) {
-                            Icons.Filled.VisibilityOff
-                        }
-                        else {
-                            Icons.Default.Visibility
-                        }
+                        Icons.Filled.VisibilityOff
+                    } else {
+                        Icons.Default.Visibility
+                    }
                     val description = if (pwVisible) "Hide password" else "Show password"
-                    IconButton(onClick = {pwVisible = !pwVisible}) {
+                    IconButton(onClick = { pwVisible = !pwVisible }) {
                         Icon(imageVector = icon, contentDescription = description)
                     }
                 },
@@ -119,17 +134,17 @@ fun LoginScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Don't have an account? ",
+                    text = "Already have an account? ",
                     color = Color.Black,
                     fontSize = 13.sp
                 )
                 Text(
-                    text = "Create Account",
+                    text = "Login",
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.clickable {
-                        navController.navigate("signup")
+                        navController.navigate("login")
                     }
                 )
             }
@@ -140,15 +155,16 @@ fun LoginScreen(navController: NavController) {
                 onClick = {
                     val email = email.text.trim() //do I need to keep the .trim() here?
                     val passwrd = password.text //do I need a .trim() here?
+                    val nameUser = name.text
 
                     if (email.isNotBlank() && passwrd.isNotBlank()) {
                         //call authentication here
-                        AuthenticationRepo.login(email, passwrd ) { success, error ->
+                        AuthenticationRepo.register(nameUser, email, passwrd ) { success, error ->
                             if(success) {
-                                navController.navigate("questionnaire")
+                                navController.navigate("login")
                             }
                             else {
-                                Toast.makeText(context, error ?: "Login failed", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, error ?: "Sign up failed", Toast.LENGTH_LONG).show()
                             }
                         }
 
@@ -161,7 +177,7 @@ fun LoginScreen(navController: NavController) {
                     .height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD7D9F7))
             ) {
-                Text(text = "Continue", color = Color(0xFF5B5F9D))
+                Text(text = "Create Account", color = Color(0xFF5B5F9D))
             }
 
             Spacer(modifier = Modifier.height(32.dp))
