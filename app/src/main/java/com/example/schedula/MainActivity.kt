@@ -10,6 +10,7 @@ import com.example.schedula.ui.QuestionnaireScreen
 import com.example.schedula.ui.ScheduleUploadScreen
 import com.example.schedula.ui.theme.SchedulaTheme
 import com.example.schedula.ui.SignUpScreen
+import com.example.schedula.ui.TimerScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,6 +42,11 @@ fun SchedulaApp() {
         }
         composable("scheduleUpload") {
             ScheduleUploadScreen(navController, {}) //make callback function empty for now
+
         }
+        composable("timer") {
+            TimerScreen(navController = navController)
+        }
+
     }
 }

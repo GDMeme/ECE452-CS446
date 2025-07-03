@@ -143,13 +143,21 @@ fun QuestionnaireScreen(navController: NavController) {
             )
             NavigationBarItem(
                 selected = false,
-                onClick = {},
+                onClick = {
+                    navController.navigate("calendar") {
+                        popUpTo("questionnaire") { inclusive = false }
+                    }
+                },
                 label = { Text("Calendar") },
                 icon = {}
             )
             NavigationBarItem(
                 selected = false,
-                onClick = {},
+                onClick = {
+                    navController.navigate("timer") {
+                        popUpTo("questionnaire") { inclusive = false }
+                    }
+                },
                 label = { Text("Timer") },
                 icon = {}
             )
