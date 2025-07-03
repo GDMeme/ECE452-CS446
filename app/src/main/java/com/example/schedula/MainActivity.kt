@@ -11,14 +11,12 @@ import com.example.schedula.ui.QuestionnaireScreen
 import com.example.schedula.ui.ScheduleUploadScreen
 import com.example.schedula.ui.theme.SchedulaTheme
 import com.example.schedula.ui.SignUpScreen
-<<<<<<< Updated upstream
 import com.example.schedula.ui.TimerScreen
-=======
+
 import com.example.schedula.ui.ExtendedLifestyleScreen
 import com.example.schedula.ui.HobbySelectionScreen
 import com.example.schedula.ui.CustomRoutineScreen
 import com.example.schedula.ui.HomeScreen
->>>>>>> Stashed changes
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,12 +55,9 @@ fun SchedulaApp() {
             ScheduleUploadScreen(navController, {}) //make callback function empty for now
 
         }
-<<<<<<< Updated upstream
         composable("timer") {
             TimerScreen(navController = navController)
         }
-
-=======
         composable("extendedQuestionnaire") {
             ExtendedLifestyleScreen(navController, {}) //TODO fix callback function for all that have empty brackets
         }
@@ -75,8 +70,5 @@ fun SchedulaApp() {
         composable("home") {
             HomeScreen(navController)
         }
-
-
->>>>>>> Stashed changes
     }
 }
