@@ -138,8 +138,14 @@ fun QuestionnaireScreen(navController: NavController) {
             NavigationBarItem(
                 selected = true,
                 onClick = {},
-                label = { Text("Questionnaire") },
+                label = { Text("Home") },
                 icon = {}
+            )
+            NavigationBarItem(
+                selected = true,
+                onClick = {},
+                label = { Text("Questions") },
+                icon = {},
             )
             NavigationBarItem(
                 selected = false,

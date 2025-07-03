@@ -145,7 +145,7 @@ fun LoginScreen(navController: NavController) {
                         //call authentication here
                         AuthenticationRepo.login(email, passwrd ) { success, error ->
                             if(success) {
-                                navController.navigate("scheduleUpload")
+                                navController.navigate("lifestyleQuestionnaire")
                             }
                             else {
                                 Toast.makeText(context, error ?: "Login failed", Toast.LENGTH_LONG).show()

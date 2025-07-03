@@ -83,7 +83,7 @@ fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String)
 //        },
             bottomBar = {
                 Button(
-                    onClick = { navController.navigate("questionnaire") },
+                    onClick = { navController.navigate("questionnaire") }, //TODO NEED TO NAVIGATE TO PAGE WITH THE CALENDAR WITH EVERYTHING IN IT
                     enabled = htmlContent != null,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
