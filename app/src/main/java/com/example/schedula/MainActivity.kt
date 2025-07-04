@@ -12,6 +12,7 @@ import com.example.schedula.ui.ScheduleUploadScreen
 import com.example.schedula.ui.theme.SchedulaTheme
 import com.example.schedula.ui.SignUpScreen
 import com.example.schedula.ui.TimerScreen
+import com.example.schedula.ui.LeaderboardScreen
 
 import com.example.schedula.ui.ExtendedLifestyleScreen
 import com.example.schedula.ui.HobbySelectionScreen
@@ -54,6 +55,9 @@ fun SchedulaApp() {
         composable("scheduleUpload") {
             ScheduleUploadScreen(navController, {}) //make callback function empty for now
 
+        }
+        composable("leaderboard") {
+            LeaderboardScreen(navController)
         }
         composable("timer") {
             TimerScreen(navController = navController)
