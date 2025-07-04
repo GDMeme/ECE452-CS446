@@ -1,3 +1,7 @@
+//Change NAV so other files can go to it
+//Backend Setup
+//possibly create functionality to move to separate goals, leaderboard, and badges page
+
 package com.example.schedula.ui
 
 import androidx.compose.foundation.background
