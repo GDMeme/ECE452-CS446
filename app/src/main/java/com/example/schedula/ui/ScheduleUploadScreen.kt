@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import com.example.schedula.ui.OnboardingDataClass
 
 
 @Composable
@@ -65,6 +66,16 @@ fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String)
 
                     htmlContent = extractedHtml
                     onHtmlExtracted(extractedHtml)
+
+                    OnboardingDataClass.scheduleData.clear()
+                    OnboardingDataClass.scheduleData.addAll(
+                        listOf(
+                            ScheduleEntry("CS101", "09:00", "10:20", "Monday", "MC 105"),
+                            ScheduleEntry("MATH135", "11:00", "12:20", "Tuesday", "RCH 101"),
+                            ScheduleEntry("STAT230", "14:00", "15:20", "Wednesday", "DC 1351"),
+                            ScheduleEntry("PHYS121", "10:30", "11:50", "Thursday", "PHY 150")
+                        )
+                    )
                 }
             }
         }
