@@ -1,89 +1,194 @@
 package com.example.schedula.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.schedula.ui.components.BottomNavBar
+import java.text.SimpleDateFormat
+import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+data class Event(
+    val title: String,
+    val startTime: String,
+    val endTime: String,
+    val date: String
+)
+
 @Composable
 fun CalendarScreen(navController: NavController) {
+    val backgroundColor = Color(0xFFF0E7F4)
+    val purple = Color(0xFF9C89B8)
+    val lightPurple = Color(0xFFE6DEF6)
+    val red = Color(0xFFDC143C)
+
+    val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    var selectedDate by remember { mutableStateOf(todayDate) }
+
+    val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+    val currentMinute = Calendar.getInstance().get(Calendar.MINUTE)
+    val isToday = selectedDate == todayDate
+
+    val eventList = remember {
+        mutableStateListOf(
+            Event("🧹 House chores", "09:00", "10:00", todayDate),
+            Event("🧘 Yoga Class", "10:00", "11:00", todayDate),
+            Event("🍳 Breakfast", "12:00", "12:30", todayDate),
+            Event("💡 Focus Time", "13:00", "15:00", todayDate),
+            Event("💡 Focus Time", "16:00", "18:00", todayDate),
+        )
+    }
+
     Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("My Week at a Glance", fontWeight = FontWeight.Bold) }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { /* do something here, possibly add your own activities */ }) {
-                Text("+")
-            }
-        },
-        modifier = Modifier.fillMaxSize()
+        bottomBar = { BottomNavBar(currentScreen = "calendar", navController = navController) }
     ) { padding ->
         Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(16.dp)
+            Modifier
                 .fillMaxSize()
+                .background(backgroundColor)
+                .padding(padding)
         ) {
-            // Days Header
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                listOf("Mon", "Tues", "Wed", "Thur", "Fri", "Sat", "Sun").forEach {
-                    Text(it, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+            Text(
+                "July 2025",
+                fontWeight = FontWeight.Bold,
+                fontSize = 22.sp,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            )
+
+            val days = (1..31).map { day ->
+                val cal = Calendar.getInstance().apply { set(2025, Calendar.JULY, day) }
+                val df = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val label = cal.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.SHORT, Locale.getDefault())
+                Triple(label ?: "", day, df.format(cal.time))
+            }
+
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 8.dp)
+            ) {
+                days.forEach { (label, day, fullDate) ->
+                    val isSelected = selectedDate == fullDate
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isSelected) purple else Color.Transparent)
+                            .clickable { selectedDate = fullDate }
+                            .padding(vertical = 8.dp, horizontal = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(label, color = if (isSelected) Color.White else Color.Black)
+                        Text(day.toString(), fontWeight = FontWeight.Bold, color = if (isSelected) Color.White else Color.Black)
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
 
-            //mock data time slots
-            listOf(
-                TimeSlot("CS 246", "10:30 AM - 11:20 AM", Color(0xFF3B82F6), 1),
-                TimeSlot("MATH 135", "9:30 AM - 10:20 AM", Color(0xFF10B981), 2),
-                TimeSlot("Study Block", "2:30 PM - 4:00 PM", Color(0xFFEF4444), 1),
-                TimeSlot("Workout", "6:00 PM - 7:00 PM", Color(0xFFF97316), 2),
-                TimeSlot("Sleep", "11:30 PM - 7:30 AM", Color(0xFF9CA3AF), 0),
-            ).forEach {
-                CalendarEventCard(it)
-            }
-        }
-    }
-}
+            val hours = (9..19).toList()
+            val eventsToday = eventList.filter { it.date == selectedDate }
 
-data class TimeSlot(val title: String, val time: String, val color: Color, val dayIndex: Int)
-
-@Composable
-fun CalendarEventCard(slot: TimeSlot) {
-    Row(modifier = Modifier.fillMaxWidth()) {
-        repeat(slot.dayIndex) {
-            Spacer(modifier = Modifier.weight(1f))
-        }
-        Card(
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier
-                .weight(1f)
-                .padding(4.dp)
-                .background(slot.color)
-        ) {
             Column(
                 modifier = Modifier
-                    .background(slot.color)
-                    .padding(8.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
-                Text(text = slot.title, fontWeight = FontWeight.Bold, color = Color.White)
-                Text(text = slot.time, fontSize = 12.sp, color = Color.White)
+                hours.forEach { hour ->
+                    val timeLabel = String.format("%02d:00", hour)
+                    val eventAtHour = eventsToday.find {
+                        it.startTime.startsWith(String.format("%02d", hour))
+                    }
+
+                    val showNowBar = isToday && hour == currentHour && currentHour in 9..19
+
+                    Column {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.height(IntrinsicSize.Min)
+                        ) {
+                            Text(
+                                text = timeLabel,
+                                modifier = Modifier.width(60.dp),
+                                fontSize = 14.sp,
+                                textAlign = TextAlign.End,
+                                color = Color.Gray
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                if (eventAtHour != null) {
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        colors = CardDefaults.cardColors(containerColor = lightPurple),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp)) {
+                                            Text(
+                                                eventAtHour.title,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 15.sp
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(
+                                                    imageVector = Icons.Default.AccessTime,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp),
+                                                    tint = Color.Black
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("${eventAtHour.startTime} - ${eventAtHour.endTime}", fontSize = 13.sp)
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    Spacer(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(48.dp)
+                                    )
+                                }
+
+                                if (showNowBar) {
+                                    val percent = currentMinute / 60f
+                                    Divider(
+                                        color = red,
+                                        thickness = 2.dp,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = (48.dp * percent))
+                                            .align(Alignment.TopStart)
+                                    )
+                                }
+                            }
+                        }
+
+                        Divider(color = Color.LightGray.copy(alpha = 0.5f))
+                    }
+                }
             }
-        }
-        repeat(6 - slot.dayIndex) {
-            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }

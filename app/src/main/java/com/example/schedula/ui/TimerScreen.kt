@@ -1,3 +1,4 @@
+
 package com.example.schedula.ui
 
 import androidx.compose.foundation.background
@@ -17,12 +18,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import com.example.schedula.ui.components.BottomNavBar
 
 @Composable
 fun TimerScreen(navController: NavController) {
@@ -53,42 +53,7 @@ fun TimerScreen(navController: NavController) {
 
     Scaffold(
         bottomBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-            ) {
-                NavigationBar(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    NavigationBarItem(
-                        selected = false,
-                        onClick = {
-                            navController.navigate("questionnaire") {
-                                popUpTo("timer") { inclusive = false }
-                            }
-                        },
-                        label = { Text("Questionnaire") },
-                        icon = {}
-                    )
-                    NavigationBarItem(
-                        selected = false,
-                        onClick = {
-                            navController.navigate("calendar") {
-                                popUpTo("timer") { inclusive = false }
-                            }
-                        },
-                        label = { Text("Calendar") },
-                        icon = {}
-                    )
-                    NavigationBarItem(
-                        selected = true,
-                        onClick = {},
-                        label = { Text("Timer") },
-                        icon = {}
-                    )
-                }
-            }
+            BottomNavBar(currentScreen = "timer", navController = navController)
         }
     ) { padding ->
         Column(
@@ -98,7 +63,6 @@ fun TimerScreen(navController: NavController) {
                 .padding(24.dp)
                 .padding(padding)
         ) {
-            // Mode selector
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -138,54 +102,30 @@ fun TimerScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Timer display
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = String.format("%02d", minutes),
-                    fontSize = 64.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = textColor
-                )
-                Text(
-                    text = ":",
-                    fontSize = 64.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = textColor
-                )
-                Text(
-                    text = String.format("%02d", seconds),
-                    fontSize = 64.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = textColor
-                )
+                Text(String.format("%02d", minutes), fontSize = 64.sp, fontWeight = FontWeight.Bold, color = textColor)
+                Text(":", fontSize = 64.sp, fontWeight = FontWeight.Bold, color = textColor)
+                Text(String.format("%02d", seconds), fontSize = 64.sp, fontWeight = FontWeight.Bold, color = textColor)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Start/Pause button
             Button(
                 onClick = { isRunning = !isRunning },
                 colors = ButtonDefaults.buttonColors(containerColor = accentPurple),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Text(text = if (isRunning) "Pause" else "Start", color = textColor)
+                Text(if (isRunning) "Pause" else "Start", color = textColor)
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Task section
-            Text(
-                text = "Tasks",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = textColor
-            )
-
+            Text("Tasks", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = textColor)
             Spacer(modifier = Modifier.height(8.dp))
 
             LazyColumn {
@@ -200,18 +140,9 @@ fun TimerScreen(navController: NavController) {
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(12.dp)
                         ) {
-                            Text(
-                                text = task,
-                                fontSize = 16.sp,
-                                modifier = Modifier.weight(1f),
-                                color = textColor
-                            )
+                            Text(task, fontSize = 16.sp, modifier = Modifier.weight(1f), color = textColor)
                             IconButton(onClick = { taskList.removeAt(index) }) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete task",
-                                    tint = borderPurple
-                                )
+                                Icon(Icons.Default.Delete, contentDescription = "Delete task", tint = borderPurple)
                             }
                         }
                     }
@@ -248,49 +179,6 @@ fun TimerScreen(navController: NavController) {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-
-            // Bottom navigation bar
-            NavigationBar {
-                NavigationBarItem(
-                    selected = true,
-                    onClick = {},
-                    label = { Text("Home") },
-                    icon = {}
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = {},
-                    label = { Text("Questions") },
-                    icon = {},
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {
-                        navController.navigate("calendar") {
-                            popUpTo("questionnaire") { inclusive = false }
-                        }
-                    },
-                    label = { Text("Calendar") },
-                    icon = {}
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {
-                        navController.navigate("timer") {
-                            popUpTo("questionnaire") { inclusive = false }
-                        }
-                    },
-                    label = { Text("Timer") },
-                    icon = {}
-                )
-            }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun TimerScreen() {
-    TimerScreen(navController = rememberNavController())
 }
