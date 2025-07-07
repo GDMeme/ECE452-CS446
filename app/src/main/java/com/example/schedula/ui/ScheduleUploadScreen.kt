@@ -31,7 +31,7 @@ import androidx.navigation.compose.rememberNavController
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import com.example.schedula.ui.OnboardingDataClass
-
+import android.widget.Toast
 
 @Composable
 fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String) -> Unit) {
@@ -81,6 +81,8 @@ fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String)
         }
     )
 
+
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -96,7 +98,7 @@ fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String)
 //        },
             bottomBar = {
                 Button(
-                    onClick = { navController.navigate("questionnaire") }, //TODO NEED TO NAVIGATE TO PAGE WITH THE CALENDAR WITH EVERYTHING IN IT
+                    onClick = { navController.navigate("calendar") }, //TODO NEED TO NAVIGATE TO PAGE WITH THE CALENDAR WITH EVERYTHING IN IT
                     enabled = htmlContent != null,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
@@ -130,6 +132,7 @@ fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String)
                         },
                         modifier = Modifier.fillMaxSize().weight(1f)
                     )
+                    Toast.makeText(LocalContext.current, "File Upload Success", Toast.LENGTH_LONG).show()
                 } ?: Text(
                     "No file selected yet"
                 )
