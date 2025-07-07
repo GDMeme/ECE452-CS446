@@ -18,6 +18,7 @@ import com.example.schedula.ui.ExtendedLifestyleScreen
 import com.example.schedula.ui.HobbySelectionScreen
 import com.example.schedula.ui.CustomRoutineScreen
 import com.example.schedula.ui.HomeScreen
+import com.example.schedula.ui.CalendarScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,5 +75,9 @@ fun SchedulaApp() {
         composable("home") {
             HomeScreen(navController)
         }
+        composable("calendar") {
+            CalendarScreen(navController)
+        }
+
     }
 }
