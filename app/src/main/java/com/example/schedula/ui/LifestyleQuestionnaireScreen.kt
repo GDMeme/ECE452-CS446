@@ -131,7 +131,7 @@ fun LifestyleQuestionnaireScreen(
                         exerciseNum = exerciseChoices[exerciseNum]
                     )
                 )
-                navController.navigate("hobbiesQuestionnaire")
+                navController.navigate("extendedQuestionnaire")
             },
             modifier = Modifier
                 .fillMaxWidth()
