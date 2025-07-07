@@ -248,6 +248,49 @@ fun TimerScreen(navController: NavController) {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+
+            // Bottom navigation bar
+            NavigationBar {
+                NavigationBarItem(
+                    selected = true,
+                    onClick = {},
+                    label = { Text("Home") },
+                    icon = {}
+                )
+                NavigationBarItem(
+                    selected = true,
+                    onClick = {},
+                    label = { Text("Questions") },
+                    icon = {},
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = {
+                        navController.navigate("calendar") {
+                            popUpTo("questionnaire") { inclusive = false }
+                        }
+                    },
+                    label = { Text("Calendar") },
+                    icon = {}
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = {
+                        navController.navigate("timer") {
+                            popUpTo("questionnaire") { inclusive = false }
+                        }
+                    },
+                    label = { Text("Timer") },
+                    icon = {}
+                )
+            }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TimerScreen() {
+    TimerScreen(navController = rememberNavController())
 }

@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.rememberNavController
 
 @Composable
 fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}) {
@@ -84,10 +85,7 @@ fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}) 
         Button(
             onClick = {
 //                onNext(
-//                    lifeStyleQuestionnaireAnswers(
-//                        bedTime,
-//                        wakeTime,
-//                        exerciseChoices[exerciseNum]
+                        OnboardingDataClass.updateHobbiesSelection(selected)
 //                    )
 //                )
                 navController.navigate("customRoutineQuestionnaire")
@@ -104,4 +102,9 @@ fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}) 
 
     }
 
+}
+@Preview(showBackground = true)
+@Composable
+fun HobbySelectionScreen() {
+    HobbySelectionScreen(navController = rememberNavController())
 }
