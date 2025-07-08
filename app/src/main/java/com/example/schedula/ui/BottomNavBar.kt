@@ -1,22 +1,14 @@
-
 package com.example.schedula.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.compose.material.icons.filled.CalendarToday
-
 
 @Composable
 fun BottomNavBar(currentScreen: String, navController: NavController) {
@@ -56,6 +48,18 @@ fun BottomNavBar(currentScreen: String, navController: NavController) {
             },
             icon = { Icon(Icons.Default.Timer, contentDescription = "Timer") },
             label = { Text("Timer") }
+        )
+        NavigationBarItem(
+            selected = currentScreen == "leaderboard",
+            onClick = {
+                if (currentScreen != "leaderboard") {
+                    navController.navigate("leaderboard") {
+                        popUpTo(currentScreen) { inclusive = false }
+                    }
+                }
+            },
+            icon = { Icon(Icons.Default.EmojiEvents, contentDescription = "Leaderboard") },
+            label = { Text("Leaderboard") }
         )
     }
 }

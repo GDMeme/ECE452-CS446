@@ -1,11 +1,6 @@
-//Change NAV so other files can go to it
-//Backend Setup
-//possibly create functionality to move to separate goals, leaderboard, and badges page
-
 package com.example.schedula.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -25,41 +20,30 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.schedula.ui.components.BottomNavBar
+import androidx.compose.foundation.clickable
 
 data class LeaderboardUser(val rank: Int, val username: String, val xp: Int)
 data class DailyMission(val title: String, val description: String, val xp: Int = 20)
 
-// === Data source simulation ===
+fun getLeaderboardUsers() = listOf(
+    LeaderboardUser(1, "User1", 3090),
+    LeaderboardUser(2, "User2", 2750),
+    LeaderboardUser(3, "User3", 1680),
+    LeaderboardUser(4, "User4", 1660)
+)
 
-fun getLeaderboardUsers(): List<LeaderboardUser> {
-    return listOf(
-        LeaderboardUser(1, "User1", 3090),
-        LeaderboardUser(2, "User2", 2750),
-        LeaderboardUser(3, "User3", 1680),
-        LeaderboardUser(4, "User4", 1660)
-    )
-}
+fun getDailyMissions() = listOf(
+    DailyMission("Master of Focus", "Use the Pomodoro timer for a total of 60 minutes."),
+    DailyMission("Active Engagement", "Attend one exercise event today."),
+    DailyMission("Event Enthusiast", "Attend more than 3 scheduled events."),
+    DailyMission("Early Riser", "Wake up on time."),
+    DailyMission("Momentum Keeper", "Complete two scheduled tasks with no delay in between."),
+    DailyMission("Climb the Leaderboard", "Gain at least 100 XP in one day.")
+)
 
-fun getDailyMissions(): List<DailyMission> {
-    return listOf(
-        DailyMission("Master of Focus", "Use the Pomodoro timer for a total of 60 minutes."),
-        DailyMission("Active Engagement", "Attend one exercise event today."),
-        DailyMission("Event Enthusiast", "Attend more than 3 scheduled events."),
-        DailyMission("Early Riser", "Wake up on time."),
-        DailyMission("Momentum Keeper", "Complete two scheduled tasks with no delay in between."),
-        DailyMission("Climb the Leaderboard", "Gain at least 100 XP in one day.")
-    )
-}
-
-fun getBadgeAchievements(): List<Boolean> {
-    return listOf(true, true, true, false, false, false)
-}
-
-fun getUserXP(): Int {
-    return 60 // Example
-}
-
-// === UI Components ===
+fun getBadgeAchievements() = listOf(true, true, true, false, false, false)
+fun getUserXP(): Int = 60
 
 @Composable
 fun BadgeItemSmall(badge: DailyMission, achieved: Boolean) {
@@ -109,212 +93,183 @@ fun LeaderboardScreen(navController: NavController) {
     val missionChecks = remember { mutableStateListOf(false, false) }
     var totalXP by remember { mutableStateOf(0) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp)
-    ) {
-        // Top bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 24.dp, bottom = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Menu,
-                contentDescription = "Back to Login",
-                modifier = Modifier
-                    .padding(end = 8.dp)
-                    .clickable {
-                        navController.navigate("login") {
-                            popUpTo("questionnaire") { inclusive = true }
-                        }
-                    }
-            )
-            Text(
-                text = "Questionnaire",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(15.dp))
-
-        // Profile Card
-        Card(
-            shape = RoundedCornerShape(14.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
-                        contentDescription = null,
-                        modifier = Modifier.size(36.dp),
-                        tint = Color(0xFF5B5F9D)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text("Username", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        Text("Level 2 Productive Scholar", fontSize = 11.sp)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                LinearProgressIndicator(
-                    progress = currentXP / 100f,
-                    modifier = Modifier.fillMaxWidth(),
-                    color = Color(0xFF5B5F9D)
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-                Text("$currentXP / 100 XP", fontSize = 11.sp)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Daily Missions Section
-        Text("Daily Missions", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(6.dp))
-
+    Scaffold(
+        bottomBar = { BottomNavBar(currentScreen = "leaderboard", navController = navController) }
+    ) { padding ->
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFF6F2FF), RoundedCornerShape(10.dp))
-                .padding(8.dp)
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 12.dp)
+                .verticalScroll(rememberScrollState())
         ) {
-            randomMissions.forEachIndexed { index, mission ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 3.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(mission.title, fontWeight = FontWeight.Medium, fontSize = 12.sp)
-                        Text("+${mission.xp} XP", fontSize = 10.sp, color = Color.Gray)
-                    }
-                    Checkbox(
-                        checked = missionChecks[index],
-                        onCheckedChange = {
-                            missionChecks[index] = it
-                            totalXP = missionChecks.mapIndexed { i, checked ->
-                                if (checked) randomMissions[i].xp else 0
-                            }.sum()
-                        },
-                        colors = CheckboxDefaults.colors(checkedColor = Color(0xFF5B5F9D))
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(24.dp))
 
-            Spacer(modifier = Modifier.height(4.dp))
-            Text("DAILY XP goal", fontSize = 10.sp, color = Color.Gray)
             Text(
-                "$totalXP / 100 XP",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.End)
+                text = "Leaderboard",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 12.dp)
             )
-        }
 
-        Spacer(modifier = Modifier.height(14.dp))
+            // Profile Card
+            Card(
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(36.dp),
+                            tint = Color(0xFF5B5F9D)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text("Username", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("Level 2 Productive Scholar", fontSize = 11.sp)
+                        }
+                    }
 
-        // Leaderboard Section
-        Text("Leaderboard", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.White, RoundedCornerShape(16.dp))
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            listOf(
-                Triple("Global", Icons.Default.Public, 0),
-                Triple("Friends", Icons.Default.Group, 1),
-                Triple("You", Icons.Default.Person, 2)
-            ).forEach { (label, icon, index) ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .clickable { selectedTab = index }
-                        .padding(horizontal = 4.dp)
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = "$label Icon",
-                        tint = if (selectedTab == index) Color(0xFF5B5F9D) else Color.Gray,
-                        modifier = Modifier.size(18.dp)
+                    LinearProgressIndicator(
+                        progress = currentXP / 100f,
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color(0xFF5B5F9D)
                     )
+
                     Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = label,
-                        color = if (selectedTab == index) Color(0xFF5B5F9D) else Color.Gray,
-                        fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
-                        fontSize = 10.sp
-                    )
+                    Text("$currentXP / 100 XP", fontSize = 11.sp)
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-        leaderboardUsers.forEach {
-            Card(
+            // Daily Missions
+            Text("Daily Missions", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 1.dp),
+                    .background(Color(0xFFF6F2FF), RoundedCornerShape(10.dp))
+                    .padding(8.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("#${it.rank} ${it.username}", fontSize = 12.sp)
-                    Text("${it.xp} XP", fontSize = 12.sp)
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Badges Section
-        Text("Badges", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(6),
-            modifier = Modifier.heightIn(max = 180.dp),
-            content = {
-                itemsIndexed(allMissions) { index, badge ->
-                    BadgeItemSmall(badge = badge, achieved = badgeAchievements.getOrNull(index) ?: false)
-                }
-            }
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        // Bottom Navigation
-        NavigationBar(modifier = Modifier.padding(bottom = 4.dp)) {
-            listOf("Questionnaire", "Calendar", "Timer", "Achievements").forEach { label ->
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {
-                        navController.navigate(label.lowercase()) {
-                            popUpTo("questionnaire") { inclusive = false }
+                randomMissions.forEachIndexed { index, mission ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(mission.title, fontWeight = FontWeight.Medium, fontSize = 12.sp)
+                            Text("+${mission.xp} XP", fontSize = 10.sp, color = Color.Gray)
                         }
-                    },
-                    label = { Text(label, fontSize = 10.sp) },
-                    icon = {}
+                        Checkbox(
+                            checked = missionChecks[index],
+                            onCheckedChange = {
+                                missionChecks[index] = it
+                                totalXP = missionChecks.mapIndexed { i, checked ->
+                                    if (checked) randomMissions[i].xp else 0
+                                }.sum()
+                            },
+                            colors = CheckboxDefaults.colors(checkedColor = Color(0xFF5B5F9D))
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("DAILY XP goal", fontSize = 10.sp, color = Color.Gray)
+                Text(
+                    "$totalXP / 100 XP",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.End)
                 )
             }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Leaderboard
+            Text("Leaderboard", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, RoundedCornerShape(16.dp))
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                listOf(
+                    Triple("Global", Icons.Default.Public, 0),
+                    Triple("Friends", Icons.Default.Group, 1),
+                    Triple("You", Icons.Default.Person, 2)
+                ).forEach { (label, icon, index) ->
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .clickable { selectedTab = index }
+                            .padding(horizontal = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = "$label Icon",
+                            tint = if (selectedTab == index) Color(0xFF5B5F9D) else Color.Gray,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = label,
+                            color = if (selectedTab == index) Color(0xFF5B5F9D) else Color.Gray,
+                            fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 10.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            leaderboardUsers.forEach {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 1.dp),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("#${it.rank} ${it.username}", fontSize = 12.sp)
+                        Text("${it.xp} XP", fontSize = 12.sp)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Badges
+            Text("Badges", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(6),
+                modifier = Modifier.heightIn(max = 180.dp),
+                content = {
+                    itemsIndexed(allMissions) { index, badge ->
+                        BadgeItemSmall(badge = badge, achieved = badgeAchievements.getOrNull(index) ?: false)
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(64.dp)) // space above nav bar
         }
     }
 }

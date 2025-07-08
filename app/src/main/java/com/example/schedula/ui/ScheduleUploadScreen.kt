@@ -6,50 +6,34 @@ import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
-import androidx.compose.material3.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.compose.rememberNavController
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import com.example.schedula.ui.OnboardingDataClass
-
 
 @Composable
 fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String) -> Unit) {
     val context = LocalContext.current
     var htmlContent by remember { mutableStateOf<String?>(null) }
 
-    // --- Extracts all HTML parts from MHT content ---
+    // Extracts all HTML parts from MHT content
     fun extractFullHtmlFromMht(mhtText: String): String {
         val htmlParts = mutableListOf<String>()
-
-        // Find all HTML <html>...</html> sections (could be multiple if frames etc.)
         val regex = Regex("(?si)(<html.*?</html>)")
         regex.findAll(mhtText).forEach { match ->
             htmlParts.add(match.value)
         }
-
         return if (htmlParts.isNotEmpty()) {
-            // Combine all parts into one HTML document
             htmlParts.joinToString("<hr/>")
         } else {
             "No HTML content found in MHT file."
@@ -67,6 +51,7 @@ fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String)
                     htmlContent = extractedHtml
                     onHtmlExtracted(extractedHtml)
 
+                    // Placeholder schedule data (you'll replace this later)
                     OnboardingDataClass.scheduleData.clear()
                     OnboardingDataClass.scheduleData.addAll(
                         listOf(
@@ -84,26 +69,27 @@ fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String)
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFEFF4F9)) // light blue background
+            .background(Color(0xFFF0E7F4)) // match your app's background
             .padding(horizontal = 24.dp, vertical = 30.dp),
         contentAlignment = Alignment.Center
     ) {
         Scaffold(
-//        topBar = {
-//            TopAppBar(
-//                title = { Text("Upload Your Schedule") }
-//            )
-//        },
             bottomBar = {
                 Button(
-                    onClick = { navController.navigate("questionnaire") }, //TODO NEED TO NAVIGATE TO PAGE WITH THE CALENDAR WITH EVERYTHING IN IT
+                    onClick = {
+                        navController.navigate("success") {
+                            popUpTo("scheduleUpload") { inclusive = true }
+                        }
+                    },
                     enabled = htmlContent != null,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD7D9F7))
-                ) { Text("Next", color = Color(0xFF5B5F9D)) }
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6750A4))
+                ) {
+                    Text("Next", color = Color.White)
+                }
             }
         ) { padding ->
             Column(Modifier.padding(padding).fillMaxSize()) {
@@ -116,8 +102,9 @@ fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String)
                 Button(
                     onClick = { launcher.launch(arrayOf("*/*")) },
                     modifier = Modifier.padding(16.dp),
-                    ) {
-                    Text("Select MHT File")
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6750A4))
+                ) {
+                    Text("Select MHT File", color = Color.White)
                 }
 
                 htmlContent?.let { html ->
@@ -128,10 +115,14 @@ fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String)
                                 loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
                             }
                         },
-                        modifier = Modifier.fillMaxSize().weight(1f)
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f)
                     )
                 } ?: Text(
-                    "No file selected yet"
+                    "No file selected yet",
+                    modifier = Modifier.padding(16.dp),
+                    color = Color.Gray
                 )
             }
         }

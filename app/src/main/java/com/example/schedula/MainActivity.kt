@@ -18,6 +18,7 @@ import com.example.schedula.ui.HobbySelectionScreen
 import com.example.schedula.ui.CustomRoutineScreen
 import com.example.schedula.ui.HomeScreen
 import com.example.schedula.ui.CalendarScreen
+import com.example.schedula.ui.SuccessScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,11 +37,12 @@ fun SchedulaApp() {
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination =  "calendar"
     ) {
         composable("login") {
             LoginScreen(navController)
         }
+
         composable("signup") {
             SignUpScreen(navController)
         }
@@ -51,6 +53,9 @@ fun SchedulaApp() {
         composable("scheduleUpload") {
             ScheduleUploadScreen(navController, {}) //make callback function empty for now
 
+        }
+        composable("success") {
+            SuccessScreen(navController)
         }
         composable("leaderboard") {
             LeaderboardScreen(navController)

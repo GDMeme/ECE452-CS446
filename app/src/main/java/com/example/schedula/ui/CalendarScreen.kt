@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.schedula.ui.components.AddEventDialog
 import com.example.schedula.ui.components.BottomNavBar
 import java.text.SimpleDateFormat
 import java.util.*
@@ -51,12 +52,40 @@ fun CalendarScreen(navController: NavController) {
             Event("🧘 Yoga Class", "10:00", "11:00", todayDate),
             Event("🍳 Breakfast", "12:00", "12:30", todayDate),
             Event("💡 Focus Time", "13:00", "15:00", todayDate),
-            Event("💡 Focus Time", "16:00", "18:00", todayDate),
+            Event("💡 Focus Time", "16:00", "18:00", todayDate)
+        )
+    }
+
+    var showAddDialog by remember { mutableStateOf(false) }
+
+    if (showAddDialog) {
+        AddEventDialog(
+            onDismiss = { showAddDialog = false },
+            onSave = { data ->
+                eventList.add(
+                    Event(
+                        title = data.title,
+                        startTime = data.startTime,
+                        endTime = data.endTime,
+                        date = data.date
+                    )
+                )
+                selectedDate = data.date // update selected date after saving
+            }
         )
     }
 
     Scaffold(
-        bottomBar = { BottomNavBar(currentScreen = "calendar", navController = navController) }
+        bottomBar = { BottomNavBar(currentScreen = "calendar", navController = navController) },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = purple,
+                contentColor = Color.White
+            ) {
+                Text("+", fontSize = 24.sp)
+            }
+        }
     ) { padding ->
         Column(
             Modifier
