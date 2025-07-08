@@ -37,7 +37,7 @@ fun SchedulaApp() {
 
     NavHost(
         navController = navController,
-        startDestination =  "calendar"
+        startDestination =  "login"
     ) {
         composable("login") {
             LoginScreen(navController)
