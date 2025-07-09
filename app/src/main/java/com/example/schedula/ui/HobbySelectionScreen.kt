@@ -24,7 +24,7 @@ fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}) 
     val hobbies = listOf(
         "Reading", "Playing Sports", "Cooking", "Traveling",
         "Gardening", "Watching Movies", "Drawing or Painting",
-        "Playing a Musical Instrument", "Photography", "Writing"
+        "Playing a Musical Instrument", "Photography", "Writing", "Yoga"
     )
     val selected = remember { mutableStateMapOf<String, Boolean>() }
 
