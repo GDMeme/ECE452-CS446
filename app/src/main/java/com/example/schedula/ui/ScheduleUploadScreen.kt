@@ -6,54 +6,47 @@ import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
-import androidx.compose.material3.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.compose.rememberNavController
+import com.example.schedula.ui.OnboardingDataClass
+import android.util.Log
+import android.widget.Toast
+import org.jsoup.Jsoup
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import com.example.schedula.ui.OnboardingDataClass
-import android.widget.Toast
+import java.text.SimpleDateFormat
+import java.util.*
+
+fun convertTo24Hr(time12hr: String): String {
+    val cleaned = time12hr.replace(Regex("(?i)(AM|PM)")) { " ${it.value.uppercase()}" }.trim()
+    val sdf12 = SimpleDateFormat("hh:mm a", Locale.US)
+    val sdf24 = SimpleDateFormat("HH:mm", Locale.US)
+    return try {
+        sdf24.format(sdf12.parse(cleaned)!!)
+    } catch (e: Exception) {
+        Log.e("TimeParse", "Failed to parse time: $time12hr → cleaned: $cleaned", e)
+        time12hr
+    }
+}
 
 @Composable
 fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String) -> Unit) {
     val context = LocalContext.current
     var htmlContent by remember { mutableStateOf<String?>(null) }
 
-    // --- Extracts all HTML parts from MHT content ---
     fun extractFullHtmlFromMht(mhtText: String): String {
-        val htmlParts = mutableListOf<String>()
-
-        // Find all HTML <html>...</html> sections (could be multiple if frames etc.)
-        val regex = Regex("(?si)(<html.*?</html>)")
-        regex.findAll(mhtText).forEach { match ->
-            htmlParts.add(match.value)
-        }
-
-        return if (htmlParts.isNotEmpty()) {
-            // Combine all parts into one HTML document
-            htmlParts.joinToString("<hr/>")
-        } else {
-            "No HTML content found in MHT file."
-        }
+        val htmlParts = Regex("(?si)(<html.*?</html>)").findAll(mhtText).map { it.value }.toList()
+        return if (htmlParts.isNotEmpty()) htmlParts.joinToString("<hr/>")
+        else "No HTML content found in MHT file."
     }
 
     val launcher = rememberLauncherForActivityResult(
@@ -67,38 +60,78 @@ fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String)
                     htmlContent = extractedHtml
                     onHtmlExtracted(extractedHtml)
 
-                    OnboardingDataClass.scheduleData.clear()
-                    OnboardingDataClass.scheduleData.addAll(
-                        listOf(
-                            ScheduleEntry("CS101", "09:00", "10:20", "Monday", "MC 105"),
-                            ScheduleEntry("MATH135", "11:00", "12:20", "Tuesday", "RCH 101"),
-                            ScheduleEntry("STAT230", "14:00", "15:20", "Wednesday", "DC 1351"),
-                            ScheduleEntry("PHYS121", "10:30", "11:50", "Thursday", "PHY 150")
-                        )
-                    )
+                    Log.d("MHT_VIEWER", "Extracted HTML content (first 500 chars): ${extractedHtml.take(500)}")
+
+                    val doc = Jsoup.parse(extractedHtml)
+                    val entries = mutableListOf<ScheduleEntry>()
+
+                    for (i in 0..20) {
+                        val schedEl = doc.getElementById("MTG_SCHED$$i")
+                        val locEl = doc.getElementById("MTG_LOC$$i")
+                        val compEl = doc.getElementById("MTG_COMP$$i")
+
+                        if (schedEl != null && locEl != null) {
+                            val schedText = schedEl.text().trim() // e.g., "MWF 1:00PM - 2:20PM"
+                            val location = locEl.text().trim()
+
+                            val match = Regex("""^([MTWRFh]+)\s+(\d{1,2}:\d{2}[AP]M)\s*-\s*(\d{1,2}:\d{2}[AP]M)$""")
+                                .find(schedText)
+
+                            if (match != null) {
+                                val daysRaw = match.groupValues[1]
+                                val start12 = match.groupValues[2]
+                                val end12 = match.groupValues[3]
+
+                                val start = convertTo24Hr(start12)
+                                val end = convertTo24Hr(end12)
+
+                                val dayMap = mapOf(
+                                    'M' to "Monday",
+                                    'T' to "Tuesday",
+                                    'W' to "Wednesday",
+                                    'R' to "Thursday",
+                                    'F' to "Friday",
+                                    'h' to "Thursday" // in case 'Th' got split into T + h
+                                )
+
+                                val days = daysRaw.mapNotNull { dayMap[it] }.distinct()
+                                val codeEl = doc.getElementById("MTG_CLASSNAME$$i")
+                                val courseCode = codeEl?.text()?.substringBefore(" -")?.trim() ?: "COURSE$i"
+
+                                for (day in days) {
+                                    entries.add(ScheduleEntry(courseCode, start, end, day, location))
+                                }
+                            } else {
+                                Log.w("MHT_VIEWER", "Skipping row $i: unexpected schedule format: $schedText")
+                            }
+                        }
+                    }
+
+                    if (entries.isNotEmpty()) {
+                        OnboardingDataClass.scheduleData.clear()
+                        OnboardingDataClass.scheduleData.addAll(entries)
+                        Log.d("MHT_VIEWER", "Parsed ${entries.size} schedule entries.")
+                    } else {
+                        Log.w("MHT_VIEWER", "No valid schedule entries found.")
+                    }
+
+                    Toast.makeText(context, "File Upload Success", Toast.LENGTH_LONG).show()
                 }
             }
         }
     )
 
-
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFEFF4F9)) // light blue background
+            .background(Color(0xFFEFF4F9))
             .padding(horizontal = 24.dp, vertical = 30.dp),
         contentAlignment = Alignment.Center
     ) {
         Scaffold(
-//        topBar = {
-//            TopAppBar(
-//                title = { Text("Upload Your Schedule") }
-//            )
-//        },
             bottomBar = {
                 Button(
-                    onClick = { navController.navigate("calendar") }, //TODO NEED TO NAVIGATE TO PAGE WITH THE CALENDAR WITH EVERYTHING IN IT
+                    onClick = { navController.navigate("calendar") },
                     enabled = htmlContent != null,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
@@ -118,7 +151,7 @@ fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String)
                 Button(
                     onClick = { launcher.launch(arrayOf("*/*")) },
                     modifier = Modifier.padding(16.dp),
-                    ) {
+                ) {
                     Text("Select MHT File")
                 }
 
@@ -130,12 +163,11 @@ fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String)
                                 loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
                             }
                         },
-                        modifier = Modifier.fillMaxSize().weight(1f)
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f)
                     )
-                    Toast.makeText(LocalContext.current, "File Upload Success", Toast.LENGTH_LONG).show()
-                } ?: Text(
-                    "No file selected yet"
-                )
+                } ?: Text("No file selected yet")
             }
         }
     }
