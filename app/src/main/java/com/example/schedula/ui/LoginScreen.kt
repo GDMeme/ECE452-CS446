@@ -138,23 +138,22 @@ fun LoginScreen(navController: NavController) {
 
             Button(
                 onClick = {
-//                    val email = email.text.trim() //do I need to keep the .trim() here?
-//                    val passwrd = password.text //do I need a .trim() here?
-//
-//                    if (email.isNotBlank() && passwrd.isNotBlank()) {
-//                        //call authentication here
-//                        AuthenticationRepo.login(email, passwrd ) { success, error ->
-//                            if(success) {
-//                                navController.navigate("lifestyleQuestionnaire")
-//                            }
-//                            else {
-//                                Toast.makeText(context, error ?: "Login failed", Toast.LENGTH_LONG).show()
-//                            }
-//                        }
-//
-//
-//                    }
-                    navController.navigate("lifestyleQuestionnaire")
+                    val email = email.text.trim() //do I need to keep the .trim() here?
+                    val passwrd = password.text //do I need a .trim() here?
+
+                    if (email.isNotBlank() && passwrd.isNotBlank()) {
+                        //call authentication here
+                        AuthenticationRepo.login(email, passwrd ) { success, error ->
+                            if(success) {
+                                navController.navigate("lifestyleQuestionnaire")
+                            }
+                            else {
+                                Toast.makeText(context, error ?: "Login failed", Toast.LENGTH_LONG).show()
+                            }
+                        }
+
+                    }
+//                    navController.navigate("lifestyleQuestionnaire")
                 },
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier

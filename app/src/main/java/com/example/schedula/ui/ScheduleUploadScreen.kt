@@ -138,7 +138,6 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                     Log.d("SCHEDULE_ENTRIES", "Parsed entries: ${entries.joinToString("\n")}")
 
                     if (entries.isNotEmpty()) {
-                        eventListState.clear()
                         eventListState.addAll(entries)
                         Toast.makeText(context, "File Upload Success", Toast.LENGTH_LONG).show()
                     } else {

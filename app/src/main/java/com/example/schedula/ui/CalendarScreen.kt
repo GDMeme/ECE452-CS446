@@ -60,8 +60,7 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
 //        )
 //    }
 
-    val eventList = remember {
-        mutableStateListOf<Event>().apply {
+    eventList.apply {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val dayFormat = SimpleDateFormat("EEEE", Locale.getDefault())
 
@@ -71,6 +70,61 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
             while (calendar.get(Calendar.MONTH) == Calendar.JULY) {
                 val dateStr = dateFormat.format(calendar.time)
                 val dayName = dayFormat.format(calendar.time).uppercase()
+                // === Monday July 7 ===
+                add(Event("🍽️ Breakfast", "08:00", "08:30", "2025-07-07"))
+                add(Event("💡 Study Session 1", "09:00", "10:00", "2025-07-07"))
+                add(Event("🍱 Lunch", "12:00", "13:00", "2025-07-07"))
+                add(Event("🍽️ Dinner", "18:00", "19:00", "2025-07-07"))
+                add(Event("💡 Study Session 2", "20:00", "21:00", "2025-07-07"))
+
+                // === Tuesday July 8 ===
+                add(Event("🍽️ Breakfast", "08:00", "08:30", "2025-07-08"))
+                add(Event("💡 Study Session 1", "09:00", "10:00", "2025-07-08"))
+                add(Event("🍱 Lunch", "12:00", "13:00", "2025-07-08"))
+                add(Event("🏋️ Exercise", "18:00", "19:00", "2025-07-08"))
+                add(Event("🍽️ Dinner", "18:00", "19:00", "2025-07-08"))
+                add(Event("🎬 Movie Night", "21:00", "22:00", "2025-07-08"))
+                add(Event("💡 Study Session 2", "20:00", "21:00", "2025-07-08"))
+
+                // === Wednesday July 9 ===
+                add(Event("🍽️ Breakfast", "08:00", "08:30", "2025-07-09"))
+                add(Event("💡 Study Session 1", "09:00", "10:00", "2025-07-09"))
+                add(Event("🍱 Lunch", "12:00", "13:00", "2025-07-09"))
+                add(Event("🏃 Exercise", "15:00", "16:00", "2025-07-09"))
+                add(Event("💡 Study Session", "17:00", "18:00", "2025-07-09"))
+                add(Event("🍽️ Dinner", "18:00", "19:00", "2025-07-09"))
+                add(Event("💡 Study Session 2", "20:00", "21:00", "2025-07-09"))
+
+                // === Thursday July 10 ===
+                add(Event("🍽️ Breakfast", "08:00", "08:30", "2025-07-10"))
+                add(Event("💡 Study Session 1", "09:00", "10:00", "2025-07-10"))
+                add(Event("🧘 Yoga", "10:00", "11:00", "2025-07-10"))
+                add(Event("🍱 Lunch", "12:00", "13:00", "2025-07-10"))
+                add(Event("🍽️ Dinner", "18:00", "19:00", "2025-07-10"))
+                add(Event("💡 Study Session 2", "20:00", "21:00", "2025-07-10"))
+
+                // === Friday July 11 ===
+                add(Event("🍽️ Breakfast", "08:00", "08:30", "2025-07-11"))
+                add(Event("💡 Study Session 1", "09:00", "10:00", "2025-07-11"))
+                add(Event("🍱 Lunch", "12:00", "13:00", "2025-07-11"))
+                add(Event("🎸 Guitar Practice", "14:00", "15:00", "2025-07-11"))
+                add(Event("🍽️ Dinner", "18:00", "19:00", "2025-07-11"))
+                add(Event("💡 Study Session 2", "20:00", "21:00", "2025-07-11"))
+
+                // === Saturday July 12 ===
+                add(Event("🍽️ Breakfast", "08:00", "08:30", "2025-07-12"))
+                add(Event("💡 Study Session 1", "09:00", "10:00", "2025-07-12"))
+                add(Event("🍱 Lunch", "12:00", "13:00", "2025-07-12"))
+                add(Event("🍽️ Dinner", "18:00", "19:00", "2025-07-12"))
+                add(Event("💡 Study Session 2", "20:00", "21:00", "2025-07-12"))
+
+                // === Sunday July 13 ===
+                add(Event("🍽️ Breakfast", "08:00", "08:30", "2025-07-13"))
+                add(Event("💡 Study Session 1", "09:00", "10:00", "2025-07-13"))
+                add(Event("🍱 Lunch", "12:00", "13:00", "2025-07-13"))
+                add(Event("🍽️ Dinner", "18:00", "19:00", "2025-07-13"))
+                add(Event("💡 Study Session 2", "20:00", "21:00", "2025-07-13"))
+
 
                 OnboardingDataClass.scheduleData.forEach { item ->
                     if (item.day.uppercase() == dayName) {
@@ -87,7 +141,6 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
                 calendar.add(Calendar.DAY_OF_MONTH, 1)
             }
         }
-    }
 
 
     var showAddDialog by remember { mutableStateOf(false) }

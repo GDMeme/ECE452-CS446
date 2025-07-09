@@ -45,7 +45,7 @@ fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}) 
                 modifier = Modifier
                     .padding(end = 8.dp)
                     .clickable {
-                        navController.navigate("extendedQuestionnaire") {
+                        navController.navigate("lifestyleQuestionnaire") {
                             popUpTo("hobbiesQuestionnaire") { inclusive = true }
                         }
                     }

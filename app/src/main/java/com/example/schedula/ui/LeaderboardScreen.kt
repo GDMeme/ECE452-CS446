@@ -27,10 +27,10 @@ data class LeaderboardUser(val rank: Int, val username: String, val xp: Int)
 data class DailyMission(val title: String, val description: String, val xp: Int = 20)
 
 fun getLeaderboardUsers() = listOf(
-    LeaderboardUser(1, "User1", 3090),
-    LeaderboardUser(2, "User2", 2750),
-    LeaderboardUser(3, "User3", 1680),
-    LeaderboardUser(4, "User4", 1660)
+    LeaderboardUser(1, "Test", 3090),
+    LeaderboardUser(2, "Mark", 2750),
+    LeaderboardUser(3, "Kate", 1680),
+    LeaderboardUser(4, "Leah", 1660)
 )
 
 fun getDailyMissions() = listOf(
@@ -126,7 +126,7 @@ fun LeaderboardScreen(navController: NavController) {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
-                            Text("Username", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("Alex", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             Text("Level 2 Productive Scholar", fontSize = 11.sp)
                         }
                     }

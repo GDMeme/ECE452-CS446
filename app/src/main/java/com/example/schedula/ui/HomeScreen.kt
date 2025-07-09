@@ -37,11 +37,12 @@ fun HomeScreen(navController: NavController) {
 
     val eventList = remember {
         mutableStateListOf(
-            HomeEvent("🧹 House chores", "09:00", "10:00", todayDate),
-            HomeEvent("🧘 Yoga Class", "10:00", "11:00", todayDate),
-            HomeEvent("🍳 Breakfast", "12:00", "12:30", todayDate),
-            HomeEvent("💡 Focus Time", "13:00", "15:00", todayDate),
-            HomeEvent("💡 Focus Time", "16:00", "18:00", todayDate)
+            HomeEvent("ECE 452 @ MC 2017", "13:00", "14:20", "2025-07-09"),
+            HomeEvent("MSE 452 @ CPH 3681", "11:30", "12:50", "2025-07-09"),
+            HomeEvent("🏃 Exercise", "15:00", "16:00", "2025-07-09"),
+            HomeEvent("💡 Study Session", "17:00", "18:00", "2025-07-09"),
+            HomeEvent("🍽️ Dinner", "18:00", "19:00", "2025-07-09"),
+            HomeEvent("💡 Study Session", "20:00", "21:00", "2025-07-09")
         )
     }
 
@@ -82,7 +83,7 @@ fun HomeScreen(navController: NavController) {
                     tint = Color.Gray
                 )
                 Text(
-                    text = "Good Morning,\nUsername!",
+                    text = "Good Morning,\nAlex!",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
