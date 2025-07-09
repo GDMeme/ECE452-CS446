@@ -1,5 +1,7 @@
 package com.example.schedula.ui
 
+import androidx.compose.runtime.mutableStateListOf
+
 data class ScheduleEntry(
     val courseCode: String,
     val startTime: String,
@@ -23,7 +25,7 @@ object OnboardingDataClass {
 
     val hobbiesSelected: MutableMap<String, Boolean> = mutableMapOf()
     val customRoutines: MutableList<String> = MutableList(4) { "" }
-    val scheduleData: MutableList<ScheduleEntry> = mutableListOf()
+    val scheduleData = mutableStateListOf<ScheduleEntry>()
 
     fun clearAll() {
         bedTime = ""
