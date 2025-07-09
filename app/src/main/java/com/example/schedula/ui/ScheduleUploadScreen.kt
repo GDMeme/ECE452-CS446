@@ -191,16 +191,10 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                 }
 
                 htmlContent?.let { html ->
-                    AndroidView(
-                        factory = {
-                            WebView(it).apply {
-                                webViewClient = WebViewClient()
-                                loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .weight(1f)
+                    Text(
+                        "File uploaded successfully!",
+                        modifier = Modifier.padding(16.dp),
+                        color = Color(0xFF4CAF50) // green for success
                     )
                 } ?: Text(
                     "No file selected yet",
