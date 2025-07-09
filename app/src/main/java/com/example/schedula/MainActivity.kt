@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.navigation.compose.*
 import com.example.schedula.ui.LifestyleQuestionnaireScreen
 import com.example.schedula.ui.LoginScreen
@@ -18,6 +19,9 @@ import com.example.schedula.ui.HobbySelectionScreen
 import com.example.schedula.ui.CustomRoutineScreen
 import com.example.schedula.ui.HomeScreen
 import com.example.schedula.ui.CalendarScreen
+import com.example.schedula.ui.Event
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateListOf
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,6 +36,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun SchedulaApp() {
+    val eventList = remember { mutableStateListOf<Event>() }
     val navController = rememberNavController()
 
     NavHost(
@@ -49,8 +54,7 @@ fun SchedulaApp() {
             LifestyleQuestionnaireScreen(navController, {}, {}) //fix callback function
         }
         composable("scheduleUpload") {
-            ScheduleUploadScreen(navController, {}) //make callback function empty for now
-
+            ScheduleUploadScreen(navController, eventList)
         }
         composable("leaderboard") {
             LeaderboardScreen(navController)
@@ -71,7 +75,7 @@ fun SchedulaApp() {
             HomeScreen(navController)
         }
         composable("calendar") {
-            CalendarScreen(navController)
+            CalendarScreen(navController, eventList)
         }
 
     }

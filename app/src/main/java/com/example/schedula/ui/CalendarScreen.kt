@@ -23,6 +23,7 @@ import androidx.navigation.NavController
 import com.example.schedula.ui.components.BottomNavBar
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 
 data class Event(
     val title: String,
@@ -32,7 +33,7 @@ data class Event(
 )
 
 @Composable
-fun CalendarScreen(navController: NavController) {
+fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Event>) {
     val backgroundColor = Color(0xFFF0E7F4)
     val purple = Color(0xFF9C89B8)
     val lightPurple = Color(0xFFE6DEF6)
@@ -45,15 +46,8 @@ fun CalendarScreen(navController: NavController) {
     val currentMinute = Calendar.getInstance().get(Calendar.MINUTE)
     val isToday = selectedDate == todayDate
 
-    val eventList = remember {
-        mutableStateListOf(
-            Event("🧹 House chores", "09:00", "10:00", todayDate),
-            Event("🧘 Yoga Class", "10:00", "11:00", todayDate),
-            Event("🍳 Breakfast", "12:00", "12:30", todayDate),
-            Event("💡 Focus Time", "13:00", "15:00", todayDate),
-            Event("💡 Focus Time", "16:00", "18:00", todayDate),
-        )
-    }
+    // Deduplicate event list based on title, time, and date
+    val deduplicatedEvents = eventList.distinctBy { Triple(it.title, it.startTime, it.date) }
 
     Scaffold(
         bottomBar = { BottomNavBar(currentScreen = "calendar", navController = navController) }
@@ -104,7 +98,7 @@ fun CalendarScreen(navController: NavController) {
             Spacer(Modifier.height(12.dp))
 
             val hours = (9..19).toList()
-            val eventsToday = eventList.filter { it.date == selectedDate }
+            val eventsToday = deduplicatedEvents.filter { it.date == selectedDate }
 
             Column(
                 modifier = Modifier
@@ -114,8 +108,9 @@ fun CalendarScreen(navController: NavController) {
             ) {
                 hours.forEach { hour ->
                     val timeLabel = String.format("%02d:00", hour)
-                    val eventAtHour = eventsToday.find {
-                        it.startTime.startsWith(String.format("%02d", hour))
+                    val eventsAtHour = eventsToday.filter {
+                        val eventHour = it.startTime.substringBefore(":").toIntOrNull()
+                        eventHour == hour || (eventHour == hour - 1 && it.startTime.contains(":30"))
                     }
 
                     val showNowBar = isToday && hour == currentHour && currentHour in 9..19
@@ -136,30 +131,34 @@ fun CalendarScreen(navController: NavController) {
                             Spacer(modifier = Modifier.width(12.dp))
 
                             Box(modifier = Modifier.fillMaxWidth()) {
-                                if (eventAtHour != null) {
-                                    Card(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp),
-                                        colors = CardDefaults.cardColors(containerColor = lightPurple),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ) {
-                                        Column(modifier = Modifier.padding(12.dp)) {
-                                            Text(
-                                                eventAtHour.title,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 15.sp
-                                            )
-                                            Spacer(modifier = Modifier.height(4.dp))
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Icon(
-                                                    imageVector = Icons.Default.AccessTime,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(16.dp),
-                                                    tint = Color.Black
-                                                )
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text("${eventAtHour.startTime} - ${eventAtHour.endTime}", fontSize = 13.sp)
+                                if (eventsAtHour.isNotEmpty()) {
+                                    Column {
+                                        eventsAtHour.forEach { event ->
+                                            Card(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 4.dp),
+                                                colors = CardDefaults.cardColors(containerColor = lightPurple),
+                                                shape = RoundedCornerShape(16.dp)
+                                            ) {
+                                                Column(modifier = Modifier.padding(12.dp)) {
+                                                    Text(
+                                                        event.title,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 15.sp
+                                                    )
+                                                    Spacer(modifier = Modifier.height(4.dp))
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.AccessTime,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(16.dp),
+                                                            tint = Color.Black
+                                                        )
+                                                        Spacer(modifier = Modifier.width(4.dp))
+                                                        Text("${event.startTime} - ${event.endTime}", fontSize = 13.sp)
+                                                    }
+                                                }
                                             }
                                         }
                                     }

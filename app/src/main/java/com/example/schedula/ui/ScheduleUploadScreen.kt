@@ -17,7 +17,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
-import com.example.schedula.ui.OnboardingDataClass
 import android.util.Log
 import android.widget.Toast
 import org.jsoup.Jsoup
@@ -25,28 +24,27 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 
 fun convertTo24Hr(time12hr: String): String {
-    val cleaned = time12hr.replace(Regex("(?i)(AM|PM)")) { " ${it.value.uppercase()}" }.trim()
-    val sdf12 = SimpleDateFormat("hh:mm a", Locale.US)
-    val sdf24 = SimpleDateFormat("HH:mm", Locale.US)
     return try {
-        sdf24.format(sdf12.parse(cleaned)!!)
+        val sdf12 = SimpleDateFormat("hh:mma", Locale.US)
+        val sdf24 = SimpleDateFormat("HH:mm", Locale.US)
+        sdf24.format(sdf12.parse(time12hr.replace(" ", "").uppercase(Locale.US))!!)
     } catch (e: Exception) {
-        Log.e("TimeParse", "Failed to parse time: $time12hr → cleaned: $cleaned", e)
+        Log.e("TimeParse", "Failed to parse time: $time12hr", e)
         time12hr
     }
 }
 
 @Composable
-fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String) -> Unit) {
+fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotStateList<Event>) {
     val context = LocalContext.current
     var htmlContent by remember { mutableStateOf<String?>(null) }
 
     fun extractFullHtmlFromMht(mhtText: String): String {
         val htmlParts = Regex("(?si)(<html.*?</html>)").findAll(mhtText).map { it.value }.toList()
-        return if (htmlParts.isNotEmpty()) htmlParts.joinToString("<hr/>")
-        else "No HTML content found in MHT file."
+        return if (htmlParts.isNotEmpty()) htmlParts.joinToString("<hr/>") else "No HTML content found."
     }
 
     val launcher = rememberLauncherForActivityResult(
@@ -56,66 +54,94 @@ fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String)
                 context.contentResolver.openInputStream(uri)?.use { stream ->
                     val text = BufferedReader(InputStreamReader(stream)).readText()
                     val extractedHtml = extractFullHtmlFromMht(text)
-
                     htmlContent = extractedHtml
-                    onHtmlExtracted(extractedHtml)
-
-                    Log.d("MHT_VIEWER", "Extracted HTML content (first 500 chars): ${extractedHtml.take(500)}")
+                    Log.d("MHT_VIEWER", "Extracted HTML content")
 
                     val doc = Jsoup.parse(extractedHtml)
-                    val entries = mutableListOf<ScheduleEntry>()
+                    val rows = doc.select("tr")
+                    val entries = mutableListOf<Event>()
+                    var currentCourse: String? = null
 
-                    for (i in 0..20) {
-                        val schedEl = doc.getElementById("MTG_SCHED$$i")
-                        val locEl = doc.getElementById("MTG_LOC$$i")
-                        val compEl = doc.getElementById("MTG_COMP$$i")
+                    for (row in rows) {
+                        val cells = row.select("td")
+                        if (cells.isEmpty()) continue
 
-                        if (schedEl != null && locEl != null) {
-                            val schedText = schedEl.text().trim() // e.g., "MWF 1:00PM - 2:20PM"
-                            val location = locEl.text().trim()
+                        val firstText = cells[0].text().trim()
+                        if (Regex("^[A-Z]{2,4} \\d{3}[A-Z]? -").containsMatchIn(firstText)) {
+                            currentCourse = firstText.split(" -")[0].trim()
+                            continue
+                        }
 
-                            val match = Regex("""^([MTWRFh]+)\s+(\d{1,2}:\d{2}[AP]M)\s*-\s*(\d{1,2}:\d{2}[AP]M)$""")
-                                .find(schedText)
+                        if (currentCourse == null || currentCourse == "ECE 401") continue
 
-                            if (match != null) {
-                                val daysRaw = match.groupValues[1]
-                                val start12 = match.groupValues[2]
-                                val end12 = match.groupValues[3]
+                        try {
+                            val component = cells.getOrNull(2)?.text()?.trim() ?: continue
+                            val timeText = cells.getOrNull(3)?.text()?.trim() ?: continue
+                            val dateRange = cells.getOrNull(6)?.text()?.trim() ?: continue
 
-                                val start = convertTo24Hr(start12)
-                                val end = convertTo24Hr(end12)
+                            if ("TBA" in timeText || !timeText.contains("-")) continue
 
-                                val dayMap = mapOf(
-                                    'M' to "Monday",
-                                    'T' to "Tuesday",
-                                    'W' to "Wednesday",
-                                    'R' to "Thursday",
-                                    'F' to "Friday",
-                                    'h' to "Thursday" // in case 'Th' got split into T + h
-                                )
+                            val match = Regex("([MTWRF]+)\\s+(\\d{1,2}:\\d{2}[APMapm]+)\\s*-\\s*(\\d{1,2}:\\d{2}[APMapm]+)").find(timeText)
+                            if (match == null) continue
 
-                                val days = daysRaw.mapNotNull { dayMap[it] }.distinct()
-                                val codeEl = doc.getElementById("MTG_CLASSNAME$$i")
-                                val courseCode = codeEl?.text()?.substringBefore(" -")?.trim() ?: "COURSE$i"
+                            val days = match.groupValues[1]
+                            val start24 = convertTo24Hr(match.groupValues[2])
+                            val end24 = convertTo24Hr(match.groupValues[3])
 
-                                for (day in days) {
-                                    entries.add(ScheduleEntry(courseCode, start, end, day, location))
-                                }
-                            } else {
-                                Log.w("MHT_VIEWER", "Skipping row $i: unexpected schedule format: $schedText")
+                            val rangeParts = dateRange.split(" - ")
+                            if (rangeParts.size != 2) {
+                                Log.e("SCHEDULE_PARSE", "Skipping row with malformed dateRange: $dateRange")
+                                continue
                             }
+
+                            val (startStr, endStr) = rangeParts
+                            val sdf = SimpleDateFormat("MM/dd/yyyy", Locale.US)
+                            val startDate = sdf.parse(startStr.trim()) ?: continue
+                            val endDate = sdf.parse(endStr.trim()) ?: continue
+
+                            val dayMap = mapOf(
+                                'M' to Calendar.MONDAY,
+                                'T' to Calendar.TUESDAY,
+                                'W' to Calendar.WEDNESDAY,
+                                'R' to Calendar.THURSDAY,
+                                'F' to Calendar.FRIDAY
+                            )
+
+                            val windowStart = Calendar.getInstance().apply {
+                                set(2025, Calendar.JULY, 7, 0, 0, 0)
+                            }
+                            val windowEnd = Calendar.getInstance().apply {
+                                set(2025, Calendar.JULY, 11, 23, 59, 59)
+                            }
+
+                            for (d in days) {
+                                val dayCode = dayMap[d] ?: continue
+                                val cal = Calendar.getInstance()
+                                cal.time = windowStart.time
+                                while (!cal.after(windowEnd)) {
+                                    if (cal.get(Calendar.DAY_OF_WEEK) == dayCode) {
+                                        val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(cal.time)
+                                        entries.add(Event("$currentCourse $component", start24, end24, dateStr))
+                                        break
+                                    }
+                                    cal.add(Calendar.DATE, 1)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e("SCHEDULE_PARSE", "Skipping malformed row", e)
+                            continue
                         }
                     }
 
-                    if (entries.isNotEmpty()) {
-                        OnboardingDataClass.scheduleData.clear()
-                        OnboardingDataClass.scheduleData.addAll(entries)
-                        Log.d("MHT_VIEWER", "Parsed ${entries.size} schedule entries.")
-                    } else {
-                        Log.w("MHT_VIEWER", "No valid schedule entries found.")
-                    }
+                    Log.d("SCHEDULE_ENTRIES", "Parsed entries: ${entries.joinToString("\n")}")
 
-                    Toast.makeText(context, "File Upload Success", Toast.LENGTH_LONG).show()
+                    if (entries.isNotEmpty()) {
+                        eventListState.clear()
+                        eventListState.addAll(entries)
+                        Toast.makeText(context, "File Upload Success", Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(context, "No valid schedule entries found", Toast.LENGTH_LONG).show()
+                    }
                 }
             }
         }
@@ -138,7 +164,9 @@ fun ScheduleUploadScreen(navController: NavController, onHtmlExtracted: (String)
                         .fillMaxWidth()
                         .height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD7D9F7))
-                ) { Text("Next", color = Color(0xFF5B5F9D)) }
+                ) {
+                    Text("Next", color = Color(0xFF5B5F9D))
+                }
             }
         ) { padding ->
             Column(Modifier.padding(padding).fillMaxSize()) {
