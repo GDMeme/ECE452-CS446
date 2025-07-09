@@ -25,6 +25,9 @@ import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import com.example.schedula.ui.OnboardingDataClass
 
 fun convertTo24Hr(time12hr: String): String {
     return try {
@@ -41,6 +44,7 @@ fun convertTo24Hr(time12hr: String): String {
 fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotStateList<Event>) {
     val context = LocalContext.current
     var htmlContent by remember { mutableStateOf<String?>(null) }
+
 
     fun extractFullHtmlFromMht(mhtText: String): String {
         val htmlParts = Regex("(?si)(<html.*?</html>)").findAll(mhtText).map { it.value }.toList()
@@ -150,22 +154,26 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFEFF4F9))
+            .background(Color(0xFFF0E7F4)) // match your app's background
             .padding(horizontal = 24.dp, vertical = 30.dp),
         contentAlignment = Alignment.Center
     ) {
         Scaffold(
             bottomBar = {
                 Button(
-                    onClick = { navController.navigate("calendar") },
+                    onClick = {
+                        navController.navigate("success") {
+                            popUpTo("scheduleUpload") { inclusive = true }
+                        }
+                    },
                     enabled = htmlContent != null,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD7D9F7))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6750A4))
                 ) {
-                    Text("Next", color = Color(0xFF5B5F9D))
+                    Text("Next", color = Color.White)
                 }
             }
         ) { padding ->
@@ -179,8 +187,9 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                 Button(
                     onClick = { launcher.launch(arrayOf("*/*")) },
                     modifier = Modifier.padding(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6750A4))
                 ) {
-                    Text("Select MHT File")
+                    Text("Select MHT File", color = Color.White)
                 }
 
                 htmlContent?.let { html ->
@@ -195,7 +204,11 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                             .fillMaxSize()
                             .weight(1f)
                     )
-                } ?: Text("No file selected yet")
+                } ?: Text(
+                    "No file selected yet",
+                    modifier = Modifier.padding(16.dp),
+                    color = Color.Gray
+                )
             }
         }
     }

@@ -22,6 +22,7 @@ import com.example.schedula.ui.CalendarScreen
 import com.example.schedula.ui.Event
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateListOf
+import com.example.schedula.ui.SuccessScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,11 +42,12 @@ fun SchedulaApp() {
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination =  "login"
     ) {
         composable("login") {
             LoginScreen(navController)
         }
+
         composable("signup") {
             SignUpScreen(navController)
         }
@@ -55,6 +57,9 @@ fun SchedulaApp() {
         }
         composable("scheduleUpload") {
             ScheduleUploadScreen(navController, eventList)
+        }
+        composable("success") {
+            SuccessScreen(navController)
         }
         composable("leaderboard") {
             LeaderboardScreen(navController)

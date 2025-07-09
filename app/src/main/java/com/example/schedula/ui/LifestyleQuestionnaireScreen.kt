@@ -124,6 +124,12 @@ fun LifestyleQuestionnaireScreen(
 
         Button(
             onClick = {
+                OnboardingDataClass.updateLifestyleData(
+                    bed = bedTime,
+                    wake = wakeTime,
+                    exercise = exerciseChoices[exerciseNum]
+                )
+
                 onNext(
                     LifestyleQuestionnaireAnswers(
                         bedTime = bedTime,
@@ -131,7 +137,7 @@ fun LifestyleQuestionnaireScreen(
                         exerciseNum = exerciseChoices[exerciseNum]
                     )
                 )
-                navController.navigate("extendedQuestionnaire")
+                navController.navigate("hobbiesQuestionnaire")
             },
             modifier = Modifier
                 .fillMaxWidth()

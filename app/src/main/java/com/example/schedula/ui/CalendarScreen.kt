@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.schedula.ui.components.AddEventDialog
 import com.example.schedula.ui.components.BottomNavBar
 import java.text.SimpleDateFormat
 import java.util.*
@@ -49,8 +50,77 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
     // Deduplicate event list based on title, time, and date
     val deduplicatedEvents = eventList.distinctBy { Triple(it.title, it.startTime, it.date) }
 
+//    val eventList = remember {
+//        mutableStateListOf(
+//            Event("🧹 House chores", "09:00", "10:00", todayDate),
+//            Event("🧘 Yoga Class", "10:00", "11:00", todayDate),
+//            Event("🍳 Breakfast", "12:00", "12:30", todayDate),
+//            Event("💡 Focus Time", "13:00", "15:00", todayDate),
+//            Event("💡 Focus Time", "16:00", "18:00", todayDate)
+//        )
+//    }
+
+    val eventList = remember {
+        mutableStateListOf<Event>().apply {
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val dayFormat = SimpleDateFormat("EEEE", Locale.getDefault())
+
+            val calendar = Calendar.getInstance()
+            calendar.set(2025, Calendar.JULY, 1) // Start of July
+
+            while (calendar.get(Calendar.MONTH) == Calendar.JULY) {
+                val dateStr = dateFormat.format(calendar.time)
+                val dayName = dayFormat.format(calendar.time).uppercase()
+
+                OnboardingDataClass.scheduleData.forEach { item ->
+                    if (item.day.uppercase() == dayName) {
+                        add(
+                            Event(
+                                title = "${item.courseCode} @ ${item.location}",
+                                startTime = item.startTime,
+                                endTime = item.endTime,
+                                date = dateStr
+                            )
+                        )
+                    }
+                }
+                calendar.add(Calendar.DAY_OF_MONTH, 1)
+            }
+        }
+    }
+
+
+    var showAddDialog by remember { mutableStateOf(false) }
+
+    if (showAddDialog) {
+        AddEventDialog(
+            onDismiss = { showAddDialog = false },
+            onSave = { data ->
+                eventList.add(
+                    Event(
+                        title = data.title,
+                        startTime = data.startTime,
+                        endTime = data.endTime,
+                        date = data.date
+                    )
+                )
+                selectedDate = data.date // update selected date after saving
+            }
+        )
+    }
+
+
     Scaffold(
-        bottomBar = { BottomNavBar(currentScreen = "calendar", navController = navController) }
+        bottomBar = { BottomNavBar(currentScreen = "calendar", navController = navController) },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = purple,
+                contentColor = Color.White
+            ) {
+                Text("+", fontSize = 24.sp)
+            }
+        }
     ) { padding ->
         Column(
             Modifier
@@ -99,6 +169,60 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
 
             val hours = (9..19).toList()
             val eventsToday = deduplicatedEvents.filter { it.date == selectedDate }
+
+            val wakeTime = OnboardingDataClass.wakeTime
+            val bedTime = OnboardingDataClass.bedTime
+
+            val timeFormat = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
+
+            val wakeHour by remember(wakeTime) {
+                mutableStateOf(
+                    try {
+                        val wakeDate = timeFormat.parse(wakeTime)
+                        Calendar.getInstance().apply { time = wakeDate!! }.get(Calendar.HOUR_OF_DAY)
+                    } catch (e: Exception) {
+                        9
+                    }
+                )
+            }
+
+            val bedHour by remember(bedTime) {
+                mutableStateOf(
+                    try {
+                        val bedDate = timeFormat.parse(bedTime)
+                        Calendar.getInstance().apply { time = bedDate!! }.get(Calendar.HOUR_OF_DAY)
+                    } catch (e: Exception) {
+                        19
+                    }
+                )
+            }
+
+            val hours = remember(wakeTime, bedTime) {
+                val parsedWake = try {
+                    val date = timeFormat.parse(wakeTime)
+                    Calendar.getInstance().apply { time = date!! }
+                } catch (e: Exception) {
+                    Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, 9) }
+                }
+
+                val parsedBed = try {
+                    val date = timeFormat.parse(bedTime)
+                    Calendar.getInstance().apply { time = date!! }
+                } catch (e: Exception) {
+                    Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, 19) }
+                }
+
+                val startHour = parsedWake.get(Calendar.HOUR_OF_DAY)
+                val endHour = parsedBed.get(Calendar.HOUR_OF_DAY)
+
+                if (endHour >= startHour) {
+                    (startHour..endHour).toList()
+                } else {
+                    // Handle wraparound, e.g., 10 PM to 6 AM
+                    (startHour..23).toList() + (0..endHour).toList()
+                }
+            }
+            val eventsToday = eventList.filter { it.date == selectedDate }
 
             Column(
                 modifier = Modifier
@@ -190,4 +314,19 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
             }
         }
     }
+}
+
+fun convertDayToDate(dayName: String): String {
+    val daysOfWeek = listOf("SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY")
+    val today = Calendar.getInstance()
+    val target = daysOfWeek.indexOf(dayName.uppercase())
+
+    for (i in 0..6) {
+        val check = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, i) }
+        if (check.get(Calendar.DAY_OF_WEEK) == target + 1) {
+            return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(check.time)
+        }
+    }
+
+    return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(today.time) // fallback
 }
