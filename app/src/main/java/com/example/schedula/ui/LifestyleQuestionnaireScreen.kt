@@ -124,6 +124,12 @@ fun LifestyleQuestionnaireScreen(
 
         Button(
             onClick = {
+                OnboardingDataClass.updateLifestyleData(
+                    bed = bedTime,
+                    wake = wakeTime,
+                    exercise = exerciseChoices[exerciseNum]
+                )
+
                 onNext(
                     LifestyleQuestionnaireAnswers(
                         bedTime = bedTime,
