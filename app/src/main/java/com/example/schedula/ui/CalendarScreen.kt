@@ -46,14 +46,29 @@ fun CalendarScreen(navController: NavController) {
     val currentMinute = Calendar.getInstance().get(Calendar.MINUTE)
     val isToday = selectedDate == todayDate
 
+//    val eventList = remember {
+//        mutableStateListOf(
+//            Event("🧹 House chores", "09:00", "10:00", todayDate),
+//            Event("🧘 Yoga Class", "10:00", "11:00", todayDate),
+//            Event("🍳 Breakfast", "12:00", "12:30", todayDate),
+//            Event("💡 Focus Time", "13:00", "15:00", todayDate),
+//            Event("💡 Focus Time", "16:00", "18:00", todayDate)
+//        )
+//    }
+
     val eventList = remember {
-        mutableStateListOf(
-            Event("🧹 House chores", "09:00", "10:00", todayDate),
-            Event("🧘 Yoga Class", "10:00", "11:00", todayDate),
-            Event("🍳 Breakfast", "12:00", "12:30", todayDate),
-            Event("💡 Focus Time", "13:00", "15:00", todayDate),
-            Event("💡 Focus Time", "16:00", "18:00", todayDate)
-        )
+        mutableStateListOf<Event>().apply {
+            OnboardingDataClass.scheduleData.forEach {
+                add(
+                    Event(
+                        title = it.courseCode + " @ " + it.location,
+                        startTime = it.startTime,
+                        endTime = it.endTime,
+                        date = convertDayToDate(it.day)
+                    )
+                )
+            }
+        }
     }
 
     var showAddDialog by remember { mutableStateOf(false) }
@@ -220,4 +235,19 @@ fun CalendarScreen(navController: NavController) {
             }
         }
     }
+}
+
+fun convertDayToDate(dayName: String): String {
+    val daysOfWeek = listOf("SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY")
+    val today = Calendar.getInstance()
+    val target = daysOfWeek.indexOf(dayName.uppercase())
+
+    for (i in 0..6) {
+        val check = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, i) }
+        if (check.get(Calendar.DAY_OF_WEEK) == target + 1) {
+            return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(check.time)
+        }
+    }
+
+    return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(today.time) // fallback
 }
