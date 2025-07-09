@@ -132,7 +132,23 @@ fun CalendarScreen(navController: NavController) {
 
             Spacer(Modifier.height(12.dp))
 
-            val hours = (9..19).toList()
+            val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault()) // 12-hour format with AM/PM
+
+            val wakeHour = try {
+                val wakeDate = timeFormat.parse(OnboardingDataClass.wakeTime)
+                Calendar.getInstance().apply { time = wakeDate!! }.get(Calendar.HOUR_OF_DAY)
+            } catch (e: Exception) {
+                9
+            }
+
+            val bedHour = try {
+                val bedDate = timeFormat.parse(OnboardingDataClass.bedTime)
+                Calendar.getInstance().apply { time = bedDate!! }.get(Calendar.HOUR_OF_DAY)
+            } catch (e: Exception) {
+                19
+            }
+
+            val hours = (wakeHour..bedHour).toList()
             val eventsToday = eventList.filter { it.date == selectedDate }
 
             Column(
