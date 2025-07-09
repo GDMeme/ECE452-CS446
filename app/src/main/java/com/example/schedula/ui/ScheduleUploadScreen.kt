@@ -25,8 +25,6 @@ import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import com.example.schedula.ui.OnboardingDataClass
 
 fun convertTo24Hr(time12hr: String): String {

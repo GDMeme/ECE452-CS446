@@ -167,7 +167,6 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
 
             Spacer(Modifier.height(12.dp))
 
-            val hours = (9..19).toList()
             val eventsToday = deduplicatedEvents.filter { it.date == selectedDate }
 
             val wakeTime = OnboardingDataClass.wakeTime
@@ -222,7 +221,6 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
                     (startHour..23).toList() + (0..endHour).toList()
                 }
             }
-            val eventsToday = eventList.filter { it.date == selectedDate }
 
             Column(
                 modifier = Modifier
