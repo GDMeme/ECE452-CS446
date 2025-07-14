@@ -112,8 +112,9 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
             Spacer(Modifier.height(12.dp))
 
             if (selectedView == "Month") {
-                val daysOfWeek = listOf("M", "T", "W", "T", "F", "S", "S")
-                val startDay = Calendar.getInstance().apply { set(2025, Calendar.JULY, 1) }.get(Calendar.DAY_OF_WEEK) - 2
+                val daysOfWeek = listOf("S", "M", "T", "W", "Th", "F", "S")
+                val startDayRaw = Calendar.getInstance().apply { set(2025, Calendar.JULY, 1) }.get(Calendar.DAY_OF_WEEK)
+                val startDay = (startDayRaw - 1 + 7) % 7 // Makes Sunday = 0, Monday = 1, ..., Saturday = 6
                 val totalDays = 31
 
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
