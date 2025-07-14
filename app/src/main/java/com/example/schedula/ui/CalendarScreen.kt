@@ -2,8 +2,10 @@ package com.example.schedula.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -87,7 +89,6 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
 
-            // View Toggle
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -114,7 +115,7 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
             if (selectedView == "Month") {
                 val daysOfWeek = listOf("S", "M", "T", "W", "Th", "F", "S")
                 val startDayRaw = Calendar.getInstance().apply { set(2025, Calendar.JULY, 1) }.get(Calendar.DAY_OF_WEEK)
-                val startDay = (startDayRaw - 1 + 7) % 7 // Makes Sunday = 0, Monday = 1, ..., Saturday = 6
+                val startDay = (startDayRaw - 1 + 7) % 7
                 val totalDays = 31
 
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -188,14 +189,25 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
                     Triple(label ?: "", day, df.format(cal.time))
                 }
 
-                Row(
-                    Modifier
+                val lazyListState = rememberLazyListState()
+                val todayIndex = days.indexOfFirst { it.third == todayDate }
+
+                LaunchedEffect(selectedView) {
+                    if (selectedView == "Week" && todayIndex != -1) {
+                        lazyListState.scrollToItem(todayIndex)
+                    }
+                }
+
+                LazyRow(
+                    state = lazyListState,
+                    modifier = Modifier
                         .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
                         .padding(horizontal = 8.dp)
                 ) {
-                    days.forEach { (label, day, fullDate) ->
+                    items(days.size) { index ->
+                        val (label, day, fullDate) = days[index]
                         val isSelected = selectedDate == fullDate
+
                         Column(
                             modifier = Modifier
                                 .padding(horizontal = 4.dp)
@@ -214,7 +226,6 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
 
             Spacer(Modifier.height(12.dp))
 
-            // Time Slot View (shared)
             val eventsToday = deduplicatedEvents.filter { it.date == selectedDate }
 
             val wakeTime = OnboardingDataClass.wakeTime
