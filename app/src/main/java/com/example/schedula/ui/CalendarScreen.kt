@@ -101,7 +101,7 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
                         view,
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
-                            .background(if (isSelected) Color.White else Color.DarkGray)
+                            .background(if (isSelected) Color.White else purple)
                             .clickable { selectedView = view }
                             .padding(vertical = 8.dp, horizontal = 16.dp),
                         color = if (isSelected) Color.Black else Color.White,
