@@ -1,5 +1,6 @@
 package com.example.schedula.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,12 +23,14 @@ fun CustomRoutineScreen(
     navController: NavController,
     onNext: () -> Unit = {}
 ) {
+    val backgroundColor = Color(0xFFF0E7F4)
     val routines = remember { List(4) { mutableStateOf("") } }
     val selected = remember { mutableStateMapOf<String, Boolean>() }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(backgroundColor)
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.Center
     ) {

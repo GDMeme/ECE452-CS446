@@ -20,6 +20,7 @@ import androidx.navigation.compose.rememberNavController
 
 @Composable
 fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}) {
+    val backgroundColor = Color(0xFFF0E7F4)
     val hobbies = listOf(
         "Reading", "Playing Sports", "Cooking", "Traveling",
         "Gardening", "Watching Movies", "Drawing or Painting",
@@ -30,6 +31,7 @@ fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}) 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(backgroundColor)
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.Center
     ) {
