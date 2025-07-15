@@ -77,6 +77,8 @@ fun CustomRoutineScreen(
             )
         }
 
+        Spacer(Modifier.height(16.dp))
+
         Button(
             onClick = {
                 OnboardingDataClass.updateHobbiesSelection(selected)
@@ -89,7 +91,7 @@ fun CustomRoutineScreen(
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD7D9F7))
         ) {
-            Text("Next", fontSize = 18.sp)
+            Text("Next", fontSize = 18.sp, color = Color(0xFF5B5F9D))
         }
     }
 }

@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,7 +28,9 @@ fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}) 
     val selected = remember { mutableStateMapOf<String, Boolean>() }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.Center
     ) {
         // Top bar
@@ -80,31 +81,26 @@ fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}) 
             }
         }
 
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.height(24.dp))
 
         Button(
             onClick = {
-//                onNext(
-                        OnboardingDataClass.updateHobbiesSelection(selected)
-//                    )
-//                )
+                OnboardingDataClass.updateHobbiesSelection(selected)
                 navController.navigate("customRoutineQuestionnaire")
             },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
-            shape = RoundedCornerShape((16.dp)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD7D9F7))
-
-        ){
-            Text("Next", fontSize = 18.sp)
+        ) {
+            Text("Next", fontSize = 18.sp, color = Color(0xFF5B5F9D))
         }
-
-        Spacer(Modifier.height(24.dp))
-
     }
-
 }
+
 @Preview(showBackground = true)
 @Composable
-fun HobbySelectionScreen() {
+fun HobbySelectionScreenPreview() {
     HobbySelectionScreen(navController = rememberNavController())
 }
