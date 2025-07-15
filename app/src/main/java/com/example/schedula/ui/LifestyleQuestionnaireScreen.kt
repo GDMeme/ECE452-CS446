@@ -5,16 +5,21 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import java.text.SimpleDateFormat
+import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LifestyleQuestionnaireScreen(
     navController: NavController,
@@ -25,11 +30,54 @@ fun LifestyleQuestionnaireScreen(
     var wakeTime by remember { mutableStateOf("7:30 AM") }
     var exerciseNum by remember { mutableIntStateOf(1) }
 
-    val exerciseChoices = listOf(
-        "Not at all",
-        "2–3 times",
-        "3+ times"
-    )
+    val exerciseChoices = listOf("Not at all", "2–3 times", "3+ times")
+
+    var showBedPicker by remember { mutableStateOf(false) }
+    var showWakePicker by remember { mutableStateOf(false) }
+    val timeFormatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
+
+    fun formatTime(hour: Int, minute: Int): String {
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+        }
+        return timeFormatter.format(cal.time)
+    }
+
+    var bedHour by remember { mutableIntStateOf(23) }
+    var bedMinute by remember { mutableIntStateOf(30) }
+    var wakeHour by remember { mutableIntStateOf(7) }
+    var wakeMinute by remember { mutableIntStateOf(30) }
+
+    if (showBedPicker) {
+        TimePickerDialogComposable(
+            title = "Select Bed Time",
+            initialHour = bedHour,
+            initialMinute = bedMinute,
+            onDismiss = { showBedPicker = false },
+            onConfirm = { h, m ->
+                bedHour = h
+                bedMinute = m
+                bedTime = formatTime(h, m)
+                showBedPicker = false
+            }
+        )
+    }
+
+    if (showWakePicker) {
+        TimePickerDialogComposable(
+            title = "Select Wake Time",
+            initialHour = wakeHour,
+            initialMinute = wakeMinute,
+            onDismiss = { showWakePicker = false },
+            onConfirm = { h, m ->
+                wakeHour = h
+                wakeMinute = m
+                wakeTime = formatTime(h, m)
+                showWakePicker = false
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -37,7 +85,6 @@ fun LifestyleQuestionnaireScreen(
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        // Top bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -80,9 +127,15 @@ fun LifestyleQuestionnaireScreen(
             content = {
                 OutlinedTextField(
                     value = bedTime,
-                    onValueChange = { bedTime = it },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    onValueChange = {},
+                    readOnly = true,
+                    enabled = false,
+                    trailingIcon = {
+                        Icon(Icons.Filled.AccessTime, contentDescription = "Pick time")
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showBedPicker = true }
                 )
             }
         )
@@ -93,9 +146,15 @@ fun LifestyleQuestionnaireScreen(
             content = {
                 OutlinedTextField(
                     value = wakeTime,
-                    onValueChange = { wakeTime = it },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    onValueChange = {},
+                    readOnly = true,
+                    enabled = false,
+                    trailingIcon = {
+                        Icon(Icons.Filled.AccessTime, contentDescription = "Pick time")
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showWakePicker = true }
                 )
             }
         )
@@ -147,7 +206,7 @@ fun LifestyleQuestionnaireScreen(
                 containerColor = Color(0xFFD7D9F7)
             )
         ) {
-            Text("Next")
+            Text("Next", color = Color(0xFF5B5F9D))
         }
     }
 }
@@ -172,3 +231,41 @@ data class LifestyleQuestionnaireAnswers(
     val wakeTime: String,
     val exerciseNum: String
 )
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TimePickerDialogComposable(
+    title: String,
+    initialHour: Int,
+    initialMinute: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int, Int) -> Unit
+) {
+    val pickerState = rememberTimePickerState(
+        initialHour = initialHour,
+        initialMinute = initialMinute,
+        is24Hour = false
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { onConfirm(pickerState.hour, pickerState.minute) }) {
+                Text("OK", color = Color(0xFF5B5F9D))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color(0xFF5B5F9D))
+            }
+        },
+        title = {
+            Text(title, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            TimePicker(state = pickerState)
+        },
+        containerColor = Color(0xFFE6DEF6),
+        shape = RoundedCornerShape(20.dp)
+    )
+}
