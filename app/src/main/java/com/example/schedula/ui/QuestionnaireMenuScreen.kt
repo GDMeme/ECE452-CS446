@@ -30,6 +30,8 @@ fun QuestionnaireMenuScreen(navController: NavController) {
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp))
         {
+            Spacer(modifier = Modifier.height(12.dp))
+
             Text(
                 text = "Choose a Questionnaire section to edit",
                 fontWeight = FontWeight.Bold,
@@ -37,37 +39,51 @@ fun QuestionnaireMenuScreen(navController: NavController) {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
+            Spacer(modifier = Modifier.height(24.dp))
+
             Card(
-                modifier = Modifier.fillMaxWidth().clickable { navController.navigate("questionnaire")},
+                modifier = Modifier.fillMaxWidth().clickable { navController.navigate("lifestyleQuestionnaire")},
                 colors = CardDefaults.cardColors(containerColor = cardColor),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
-                    text = "Questionnaire 1",
+                    text = "Lifestyle 1",
                     modifier = Modifier.padding(16.dp),
                     fontSize =  18.sp
                 )
             }
 
             Card(
-                modifier = Modifier.fillMaxWidth().clickable { navController.navigate("") },
+                modifier = Modifier.fillMaxWidth().clickable { navController.navigate("extendedQuestionnaire") },
                 colors = CardDefaults.cardColors(containerColor = cardColor),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
-                    text = "Questionnaire 2",
+                    text = "Lifestyle 2",
                     modifier = Modifier.padding(16.dp),
                     fontSize = 18.sp
                 )
             }
 
             Card(
-                modifier = Modifier.fillMaxWidth().clickable { navController.navigate("") },
+                modifier = Modifier.fillMaxWidth().clickable { navController.navigate("hobbiesQuestionnaire") },
                 colors = CardDefaults.cardColors(containerColor = cardColor),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
-                    text = "Questionnaire 3",
+                    text = "Hobbies",
+                    modifier = Modifier.padding(16.dp),
+                    fontSize = 18.sp
+                )
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth().clickable { navController.navigate("customRoutineQuestionnaire") },
+                colors = CardDefaults.cardColors(containerColor = cardColor),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "Custom Routines",
                     modifier = Modifier.padding(16.dp),
                     fontSize = 18.sp
                 )

@@ -136,5 +136,8 @@ fun SchedulaApp() {
         composable("calendar") {
             CalendarScreen(navController, eventList)
         }
+        composable("questionsMenu") {
+            QuestionnaireMenuScreen(navController)
+        }
     }
 }

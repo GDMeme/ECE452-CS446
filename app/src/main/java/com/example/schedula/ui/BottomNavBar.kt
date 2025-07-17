@@ -5,10 +5,12 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun BottomNavBar(currentScreen: String, navController: NavController) {
@@ -59,7 +61,19 @@ fun BottomNavBar(currentScreen: String, navController: NavController) {
                 }
             },
             icon = { Icon(Icons.Default.EmojiEvents, contentDescription = "Leaderboard") },
-            label = { Text("Leaderboard") }
+            label = { Text("Leaderboard", fontSize = 10.sp) }
+        )
+        NavigationBarItem(
+            selected = currentScreen == "questionsMenu",
+            onClick = {
+                if (currentScreen != "questionsMenu") {
+                    navController.navigate("questionsMenu") {
+                        popUpTo(currentScreen) { inclusive = false }
+                    }
+                }
+            },
+            icon = { Icon(Icons.Default.QuestionMark, contentDescription = "Questions") },
+            label = { Text("Questions") }
         )
     }
 }
