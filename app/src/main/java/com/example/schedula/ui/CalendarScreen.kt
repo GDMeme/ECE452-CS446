@@ -45,6 +45,7 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
     val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     var selectedDate by remember { mutableStateOf(todayDate) }
     var selectedView by remember { mutableStateOf("Month") }
+    var selectedEvent by remember { mutableStateOf<Event?>(null) }
 
     val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     val currentMinute = Calendar.getInstance().get(Calendar.MINUTE)
@@ -62,6 +63,46 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
                 selectedDate = data.date
             }
         )
+    }
+
+    if (selectedEvent != null) {
+        AlertDialog(
+                onDismissRequest = { selectedEvent = null },
+                confirmButton = {
+                    Button(onClick = { selectedEvent = null },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = purple,
+                            contentColor = Color.White
+                        )) {
+                        Text("Close")
+                    }
+                },
+                title = {
+                    Text(selectedEvent!!.title)
+                },
+                text = {
+                    Column {
+                        Text("Start: ${selectedEvent!!.startTime}")
+                        Text("End: ${selectedEvent!!.endTime}")
+                        Text("Date: ${selectedEvent!!.date}")
+
+                        if (selectedEvent!!.title.contains("study", ignoreCase = true)) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(onClick = {
+                                selectedEvent = null
+                                navController.navigate(("timer"))
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = purple,
+                                contentColor = Color.White
+                            )) {
+                                Text("Open Timer")
+                            }
+                        }
+                    }
+                }
+        )
+
     }
 
     Scaffold(
@@ -297,7 +338,8 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
                                             Card(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .padding(vertical = 4.dp),
+                                                    .padding(vertical = 4.dp)
+                                                    .clickable { selectedEvent = event },
                                                 colors = CardDefaults.cardColors(containerColor = lightPurple),
                                                 shape = RoundedCornerShape(16.dp)
                                             ) {

@@ -27,7 +27,7 @@ fun LifestyleQuestionnaireScreen(
     onBack: () -> Unit = {},
     onNext: (LifestyleQuestionnaireAnswers) -> Unit = {}
 ) {
-    val backgroundColor = Color(0xFFF0E7F4) // Matching CalendarScreen
+    val backgroundColor = Color(0xFFFAF7FC) // Matching CalendarScreen
 
     var bedTime by remember { mutableStateOf("11:30 PM") }
     var wakeTime by remember { mutableStateOf("7:30 AM") }
@@ -51,6 +51,9 @@ fun LifestyleQuestionnaireScreen(
     var bedMinute by remember { mutableIntStateOf(30) }
     var wakeHour by remember { mutableIntStateOf(7) }
     var wakeMinute by remember { mutableIntStateOf(30) }
+
+//    val purple = Color(0xFF9C89B8)
+//    val lightPurple = Color(0xFFE6DEF6)
 
     if (showBedPicker) {
         TimePickerDialogComposable(
@@ -215,10 +218,10 @@ fun LifestyleQuestionnaireScreen(
                 .padding(bottom = 24.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFD7D9F7)
+                containerColor = Color(0xFF9C89B8)
             )
         ) {
-            Text("Next", color = Color(0xFF5B5F9D))
+            Text("Next")
         }
     }
 }

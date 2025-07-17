@@ -23,7 +23,7 @@ fun CustomRoutineScreen(
     navController: NavController,
     onNext: () -> Unit = {}
 ) {
-    val backgroundColor = Color(0xFFF0E7F4)
+    val backgroundColor = Color(0xFFFAF7FC)
     val routines = remember { List(4) { mutableStateOf("") } }
     val selected = remember { mutableStateMapOf<String, Boolean>() }
 
@@ -92,9 +92,9 @@ fun CustomRoutineScreen(
                 .fillMaxWidth()
                 .padding(bottom = 24.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD7D9F7))
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C89B8))
         ) {
-            Text("Next", fontSize = 18.sp, color = Color(0xFF5B5F9D))
+            Text("Next", fontSize = 18.sp)
         }
     }
 }
