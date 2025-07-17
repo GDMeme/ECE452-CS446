@@ -163,7 +163,7 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                             popUpTo("scheduleUpload") { inclusive = true }
                         }
                     },
-                    enabled = htmlContent != null,
+                    enabled = true, // htmlContent != null,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
