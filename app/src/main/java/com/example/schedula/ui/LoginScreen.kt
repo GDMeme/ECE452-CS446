@@ -153,7 +153,7 @@ fun LoginScreen(navController: NavController) {
                         }
 
                     }
-//                    navController.navigate("lifestyleQuestionnaire")
+                    navController.navigate("lifestyleQuestionnaire")
                 },
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier

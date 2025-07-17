@@ -1,5 +1,6 @@
 package com.example.schedula.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,12 +23,14 @@ fun CustomRoutineScreen(
     navController: NavController,
     onNext: () -> Unit = {}
 ) {
+    val backgroundColor = Color(0xFFFAF7FC)
     val routines = remember { List(4) { mutableStateOf("") } }
     val selected = remember { mutableStateMapOf<String, Boolean>() }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(backgroundColor)
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.Center
     ) {
@@ -77,6 +80,8 @@ fun CustomRoutineScreen(
             )
         }
 
+        Spacer(Modifier.height(16.dp))
+
         Button(
             onClick = {
                 OnboardingDataClass.updateHobbiesSelection(selected)
@@ -87,7 +92,7 @@ fun CustomRoutineScreen(
                 .fillMaxWidth()
                 .padding(bottom = 24.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD7D9F7))
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C89B8))
         ) {
             Text("Next", fontSize = 18.sp)
         }
