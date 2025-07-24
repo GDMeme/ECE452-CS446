@@ -110,7 +110,7 @@ fun SchedulaApp() {
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = "calendar"
     ) {
         composable("login") { LoginScreen(navController) }
         composable("signup") { SignUpScreen(navController) }
@@ -139,5 +139,9 @@ fun SchedulaApp() {
         composable("questionsMenu") {
             QuestionnaireMenuScreen(navController)
         }
+        composable("profile") {
+            ProfileScreen(navController = navController)
+        }
+
     }
 }
