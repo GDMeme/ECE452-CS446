@@ -4,7 +4,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -62,18 +61,6 @@ fun BottomNavBar(currentScreen: String, navController: NavController) {
             },
             icon = { Icon(Icons.Default.AccountCircle, contentDescription = "Profile") },
             label = { Text("Profile", fontSize = 10.sp) }
-        )
-        NavigationBarItem(
-            selected = currentScreen == "questionsMenu",
-            onClick = {
-                if (currentScreen != "questionsMenu") {
-                    navController.navigate("questionsMenu") {
-                        popUpTo(currentScreen) { inclusive = false }
-                    }
-                }
-            },
-            icon = { Icon(Icons.Default.QuestionMark, contentDescription = "Questions") },
-            label = { Text("Questions") }
         )
     }
 }
