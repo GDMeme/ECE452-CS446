@@ -32,6 +32,9 @@ fun ProfileScreen(navController: NavController) {
     val backgroundColor = Color(0xFFF0E7F4)
     var imageUri by remember { mutableStateOf<Uri?>(null) }
 
+    var isEditingName by remember { mutableStateOf(false) }
+    var username by remember { mutableStateOf("Alex") }
+
     val context = LocalContext.current
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -52,7 +55,6 @@ fun ProfileScreen(navController: NavController) {
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Profile Picture (click to upload)
             Box(
                 modifier = Modifier
                     .size(100.dp)
@@ -79,12 +81,30 @@ fun ProfileScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Alex", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            if (isEditingName) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        singleLine = true
+                    )
+                    IconButton(onClick = { isEditingName = false }) {
+                        Icon(Icons.Default.Check, contentDescription = "Save")
+                    }
+                }
+            } else {
+                Text(
+                    text = username,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { isEditingName = true }
+                )
+            }
+
             Text("test@uwaterloo.ca", fontSize = 14.sp, color = Color.Gray)
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Status row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -96,11 +116,13 @@ fun ProfileScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Settings section
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                SettingsItem(icon = Icons.Default.Person, title = "Username", subtitle = "@alex_schedula")
-                SettingsItem(icon = Icons.Default.Notifications, title = "Notifications", subtitle = "Mute, Push, Email")
-                SettingsItem(icon = Icons.Default.Settings, title = "Settings", subtitle = "Security, Privacy")
+                SettingsItem(Icons.Default.Person, "Username", "@${username}")
+                SettingsItem(Icons.Default.Notifications, "Notifications", "Mute, Push, Email")
+                SettingsItem(Icons.Default.Settings, "Settings", "Security, Privacy")
+                SettingsItem(Icons.Default.Edit, "Edit Questionnaire", "View & Edit Answers") {
+                    navController.navigate("questionsMenu")
+                }
             }
         }
     }
@@ -123,15 +145,21 @@ fun StatusBox(count: String, label: String, background: Color) {
 }
 
 @Composable
-fun SettingsItem(icon: ImageVector, title: String, subtitle: String) {
+fun SettingsItem(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: (() -> Unit)? = null
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = onClick != null) { onClick?.invoke() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
-            modifier = Modifier
-                .padding(16.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(icon, contentDescription = null, tint = Color.Black)
