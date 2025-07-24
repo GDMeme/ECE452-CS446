@@ -80,7 +80,7 @@ fun ProfileScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Text("Alex", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text("alex@schedula.com", fontSize = 14.sp, color = Color.Gray)
+            Text("test@uwaterloo.ca", fontSize = 14.sp, color = Color.Gray)
 
             Spacer(modifier = Modifier.height(24.dp))
 
