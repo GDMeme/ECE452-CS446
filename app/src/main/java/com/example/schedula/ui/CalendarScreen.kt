@@ -44,7 +44,7 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
 
     val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     var selectedDate by remember { mutableStateOf(todayDate) }
-    var selectedView by remember { mutableStateOf("Month") }
+    var selectedView by remember { mutableStateOf("Week") }
     var selectedEvent by remember { mutableStateOf<Event?>(null) }
 
     val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
