@@ -20,7 +20,7 @@ class TimerViewModel(application: Application): AndroidViewModel(application){
 
     fun addTimer(timer: Timer){
         viewModelScope.launch(Dispatchers.IO){
-            repository.addTimer(timer)
+            repository.insertTimer(timer)
         }
     }
 }

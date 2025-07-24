@@ -6,7 +6,7 @@ class TimerRepository(private val timerDao: TimerDao) {
 
     val readAllData: LiveData<List<Timer>> = timerDao.readAllData()
 
-    suspend fun addTimer(timer: Timer){
-        timerDao.addTimer(timer)
+    suspend fun insertTimer(timer: Timer){
+        timerDao.insertTimer(timer)
     }
 }

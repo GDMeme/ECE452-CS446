@@ -3,7 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
-    id("kotlin-kapt")
+    //id("kotlin-kapt")
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -73,22 +74,23 @@ dependencies {
 
     //Room - Data Storage
     // Navigation Component
-    implementation("androidx.navigation:navigation-fragment-ktx:2.2.2")
-    implementation("androidx.navigation:navigation-ui-ktx:2.2.2")
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
 
     // Room components
-    implementation("androidx.room:room-runtime:2.2.5")
-    kapt("androidx.room:room-compiler:2.2.5")
-    implementation("androidx.room:room-ktx:2.2.5")
-    androidTestImplementation("androidx.room:room-testing:2.2.5")
+    implementation(libs.androidx.room.runtime)
+    //kapt("androidx.room:room-compiler:2.2.5")
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+    androidTestImplementation(libs.androidx.room.testing)
 
     // Lifecycle components
-    implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
-    implementation("androidx.lifecycle:lifecycle-common-java8:2.2.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.2.0")
+    implementation(libs.androidx.lifecycle.extensions)
+    implementation(libs.androidx.lifecycle.common.java8)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
     // Kotlin components
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.72")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.5")
+    implementation(libs.kotlin.stdlib.jdk7)
+    api(libs.kotlinx.coroutines.core)
+    api(libs.kotlinx.coroutines.android)
 }
