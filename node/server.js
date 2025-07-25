@@ -7,19 +7,6 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 
-import fs from 'fs';
-
-console.log('GOOGLE_APPLICATION_CREDENTIALS:', process.env.GOOGLE_APPLICATION_CREDENTIALS);
-
-try {
-  const content = fs.readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'utf-8');
-  console.log('Service account JSON loaded successfully');
-} catch (err) {
-  console.error('Error loading service account JSON:', err);
-}
-
-
-
 const app = express();
 const PORT = process.env.PORT || 10000;
 
@@ -32,7 +19,7 @@ const wss = new WebSocketServer({ server });
 
 // Initialize the new Gemini client
 const ai = new GoogleGenAI({
-    authScopes: ['https://www.googleapis.com/auth/generative-language']
+    apiKey: process.env.GOOGLE_API_KEY
 });
 
 async function callGemini(fixedEvents = [], flexibleTasks = []) {
