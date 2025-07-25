@@ -16,3 +16,4 @@
 local.properties
 backend/node_modules/
 node/node_modules
+node/secrets

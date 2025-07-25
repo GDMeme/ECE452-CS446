@@ -32,7 +32,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
 import org.json.JSONArray
-
+import kotlinx.coroutines.*
+import okio.ByteString
+import java.util.concurrent.TimeUnit
 
 fun convertTo24Hr(time12hr: String): String {
     return try {
@@ -45,11 +47,44 @@ fun convertTo24Hr(time12hr: String): String {
     }
 }
 
+// Helper function to send WebSocket request and handle callbacks
+fun sendScheduleRequestOverWebSocket(
+    json: JSONObject,
+    onResponse: (String) -> Unit,
+    onError: (String) -> Unit
+) {
+    val client = OkHttpClient.Builder()
+        .readTimeout(0, TimeUnit.MILLISECONDS) // Disable timeout for WebSocket
+        .build()
+
+    val request = Request.Builder()
+        .url("wss://ece452-cs446-fcft.onrender.com") // WebSocket URL
+        .build()
+
+    val listener = object : WebSocketListener() {
+        override fun onOpen(webSocket: WebSocket, response: Response) {
+            webSocket.send(json.toString())
+        }
+
+        override fun onMessage(webSocket: WebSocket, text: String) {
+            onResponse(text)
+            // Close after response received (optional)
+            webSocket.close(1000, "Completed")
+        }
+
+        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+            onError(t.message ?: "Unknown error")
+        }
+    }
+
+    client.newWebSocket(request, listener)
+    client.dispatcher.executorService.shutdown()
+}
+
 @Composable
 fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotStateList<Event>) {
     val context = LocalContext.current
     var htmlContent by remember { mutableStateOf<String?>(null) }
-
 
     fun extractFullHtmlFromMht(mhtText: String): String {
         val htmlParts = Regex("(?si)(<html.*?</html>)").findAll(mhtText).map { it.value }.toList()
@@ -148,9 +183,7 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                         eventListState.addAll(entries)
                         Toast.makeText(context, "File Upload Success", Toast.LENGTH_LONG).show()
 
-                        val client = OkHttpClient()
-
-                        // Build the JSON payload
+                        // Build the JSON payload for WebSocket request
                         val fixedEvents = JSONArray().apply {
                             put(JSONObject().apply {
                                 put("day", "Monday")
@@ -182,31 +215,24 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                             put("payload", payload)
                         }
 
-                        // Send it to your Node backend
-                        val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
-                        val body = json.toString().toRequestBody(mediaType)
-
-                        val request = Request.Builder()
-                            .url("https://ece452-cs446-fcft.onrender.com") // your Node backend URL
-                            .post(body)
-                            .build()
-
-                        client.newCall(request).enqueue(object : Callback {
-                            override fun onFailure(call: Call, e: IOException) {
-                                println("Request failed: ${e.message}")
-                            }
-
-                            override fun onResponse(call: Call, response: Response) {
-                                response.use {
-                                    if (!it.isSuccessful) {
-                                        println("Unexpected code $it")
-                                    } else {
-                                        println("Response: ${it.body?.string()}")
+                        // Send via WebSocket instead of HTTP POST
+                        CoroutineScope(Dispatchers.Main).launch {
+                            sendScheduleRequestOverWebSocket(json,
+                                onResponse = { responseText ->
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        println("WebSocket Response: $responseText")
+                                        Toast.makeText(context, "Received schedule response", Toast.LENGTH_SHORT).show()
+                                        // TODO: Parse responseText and update your UI or eventListState if needed
+                                    }
+                                },
+                                onError = { errorMsg ->
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        println("WebSocket error: $errorMsg")
+                                        Toast.makeText(context, "WebSocket error: $errorMsg", Toast.LENGTH_SHORT).show()
                                     }
                                 }
-                            }
-                        })
-
+                            )
+                        }
                     } else {
                         Toast.makeText(context, "No valid schedule entries found", Toast.LENGTH_LONG).show()
                     }
@@ -256,7 +282,7 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                     Text("Select MHT File", color = Color.White)
                 }
 
-                htmlContent?.let { html ->
+                htmlContent?.let { _ ->
                     Text(
                         "File uploaded successfully!",
                         modifier = Modifier.padding(16.dp),

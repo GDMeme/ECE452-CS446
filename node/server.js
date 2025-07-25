@@ -1,21 +1,49 @@
+import express from 'express';
+import http from 'http';
 import { WebSocketServer } from 'ws';
-import { createServer } from 'http';
 
-// Render will inject the PORT via env
-const PORT = 10000;
-const server = createServer();
-server.listen(PORT, () => {
-  console.log(`WebSocket server listening on port ${PORT}`);
+import { TextServiceClient } from '@google-ai/generativelanguage';
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Create Gemini client once
+const geminiClient = new TextServiceClient();
+
+async function callGemini(fixedEvents = [], flexibleTasks = []) {
+  const promptText = `Given the following fixed events: ${JSON.stringify(
+    fixedEvents
+  )}, and the following flexible tasks: ${JSON.stringify(
+    flexibleTasks
+  )}, generate a complete weekly schedule in JSON with fields: day, start, end, and title.`;
+
+  const request = {
+    model: 'models/chat-bison-001',
+    prompt: {
+      text: promptText,
+    },
+    temperature: 0.7,
+    maxTokens: 512,
+  };
+
+  const [response] = await geminiClient.generateText(request);
+  return response.candidates?.[0]?.output || 'No response from Gemini.';
+}
+
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+app.get('/', (req, res) => {
+  res.send('Express + WebSocket + Gemini is live');
 });
 
+const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 wss.on('connection', (ws) => {
   console.log('Client connected');
 
-  ws.on('message', (message) => {
+  ws.on('message', async (message) => {
     let data;
-
     try {
       data = JSON.parse(message);
     } catch (err) {
@@ -26,24 +54,23 @@ wss.on('connection', (ws) => {
     if (data.type === 'generate-schedule') {
       const { fixedEvents = [], flexibleTasks = [] } = data.payload;
 
-      const defaultTime = ['09:00', '10:00', '15:00', '16:00'];
-      const schedule = [...fixedEvents];
+      try {
+        const geminiResponse = await callGemini(fixedEvents, flexibleTasks);
 
-      for (let task of flexibleTasks) {
-        schedule.push({
-          day: 'Tuesday',
-          start: defaultTime[Math.floor(Math.random() * defaultTime.length)],
-          end: defaultTime[Math.floor(Math.random() * defaultTime.length)],
-          title: task,
-        });
+        ws.send(
+          JSON.stringify({
+            type: 'schedule-response',
+            payload: geminiResponse,
+          })
+        );
+      } catch (err) {
+        console.error('Gemini call failed:', err);
+        ws.send(
+          JSON.stringify({
+            error: 'Failed to generate schedule from Gemini',
+          })
+        );
       }
-
-      ws.send(
-        JSON.stringify({
-          type: 'schedule-response',
-          payload: schedule,
-        })
-      );
     } else {
       ws.send(JSON.stringify({ error: 'Unknown message type' }));
     }
@@ -52,4 +79,8 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     console.log('Client disconnected');
   });
+});
+
+server.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });
