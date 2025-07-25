@@ -31,7 +31,9 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 // Initialize the new Gemini client
-const ai = new GoogleGenAI({});
+const ai = new GoogleGenAI({
+    authScopes: ['https://www.googleapis.com/auth/generative-language']
+});
 
 async function callGemini(fixedEvents = [], flexibleTasks = []) {
   const promptText = `Given the following fixed events: ${JSON.stringify(
