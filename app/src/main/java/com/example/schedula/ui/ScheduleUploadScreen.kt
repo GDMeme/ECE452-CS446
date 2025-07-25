@@ -26,6 +26,13 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.example.schedula.ui.OnboardingDataClass
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import java.io.IOException
+import org.json.JSONArray
+
 
 fun convertTo24Hr(time12hr: String): String {
     return try {
@@ -140,6 +147,66 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                     if (entries.isNotEmpty()) {
                         eventListState.addAll(entries)
                         Toast.makeText(context, "File Upload Success", Toast.LENGTH_LONG).show()
+
+                        val client = OkHttpClient()
+
+                        // Build the JSON payload
+                        val fixedEvents = JSONArray().apply {
+                            put(JSONObject().apply {
+                                put("day", "Monday")
+                                put("start", "10:00")
+                                put("end", "12:00")
+                                put("title", "Math Class")
+                            })
+                            put(JSONObject().apply {
+                                put("day", "Wednesday")
+                                put("start", "14:00")
+                                put("end", "15:30")
+                                put("title", "Chemistry Lab")
+                            })
+                        }
+
+                        val flexibleTasks = JSONArray().apply {
+                            put("Study")
+                            put("Workout")
+                            put("Read")
+                        }
+
+                        val payload = JSONObject().apply {
+                            put("fixedEvents", fixedEvents)
+                            put("flexibleTasks", flexibleTasks)
+                        }
+
+                        val json = JSONObject().apply {
+                            put("type", "generate-schedule")
+                            put("payload", payload)
+                        }
+
+                        // Send it to your Node backend
+                        val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+                        val body = json.toString().toRequestBody(mediaType)
+
+                        val request = Request.Builder()
+                            .url("https://ece452-cs446-fcft.onrender.com") // your Node backend URL
+                            .post(body)
+                            .build()
+
+                        client.newCall(request).enqueue(object : Callback {
+                            override fun onFailure(call: Call, e: IOException) {
+                                println("Request failed: ${e.message}")
+                            }
+
+                            override fun onResponse(call: Call, response: Response) {
+                                response.use {
+                                    if (!it.isSuccessful) {
+                                        println("Unexpected code $it")
+                                    } else {
+                                        println("Response: ${it.body?.string()}")
+                                    }
+                                }
+                            }
+                        })
+
                     } else {
                         Toast.makeText(context, "No valid schedule entries found", Toast.LENGTH_LONG).show()
                     }
