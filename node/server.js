@@ -36,7 +36,7 @@ async function start() {
     )}, generate a complete weekly schedule in JSON with fields: day, start, end, and title.`;
 
     const request = {
-      model: 'models/chat-bison-001',
+      model: 'chat-bison-001',
       prompt: { text: promptText },
       temperature: 0.7,
       maxTokens: 512,
