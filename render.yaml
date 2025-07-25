@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: ECE452
+    repo: https://github.com/GDMeme/ECE452-CS446
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+    region: oregon
+    branch: main
+    autoDeploy: true\
+    buildFilter:
+      paths:
+      - node/**
