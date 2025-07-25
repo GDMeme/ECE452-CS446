@@ -21,7 +21,7 @@ const wss = new WebSocketServer({ server });
 async function start() {
   const auth = new GoogleAuth({
     keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-    scopes: 'https://www.googleapis.com/auth/cloud-platform',
+    scopes: 'https://www.googleapis.com/auth/generative-language'
   });
 
   const geminiClient = new TextServiceClient({
