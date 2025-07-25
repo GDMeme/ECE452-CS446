@@ -2,7 +2,7 @@ import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 
 // Render will inject the PORT via env
-const PORT = process.env.PORT || 3000;
+const PORT = 10000;
 const server = createServer();
 server.listen(PORT, () => {
   console.log(`WebSocket server listening on port ${PORT}`);
