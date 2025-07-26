@@ -1,14 +1,11 @@
 package com.example.schedula.ui
 
 import androidx.compose.runtime.mutableStateListOf
-
-data class ScheduleEntry(
-    val courseCode: String,
-    val startTime: String,
-    val endTime: String,
-    val day: String,
-    val location: String
-)
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlin.collections.set
 
 object OnboardingDataClass {
     var bedTime: String = ""
@@ -25,7 +22,7 @@ object OnboardingDataClass {
 
     val hobbiesSelected: MutableMap<String, Boolean> = mutableMapOf()
     val customRoutines: MutableList<String> = MutableList(4) { "" }
-    val scheduleData = mutableStateListOf<ScheduleEntry>()
+    val scheduleData = mutableStateListOf<Event>()
 
     fun clearAll() {
         bedTime = ""
@@ -76,6 +73,38 @@ object OnboardingDataClass {
         for (i in routines.indices) {
             if (i < customRoutines.size) {
                 customRoutines[i] = routines[i]
+            }
+        }
+    }
+
+    fun loadFromDataStore(dataStoreManager: DataStoreManager) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dataStoreManager.lifestyleDataFlow.collectLatest { (bed, wake, exercise) ->
+                bedTime = bed
+                wakeTime = wake
+                exerciseFrequency = exercise
+            }
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            dataStoreManager.extendedLifestyleDataFlow.collectLatest { ext ->
+                studyHours = ext.studyHours
+                socializeFrequency = ext.socializeFreq
+                hobby = ext.hobby
+                steps = ext.steps
+                water = ext.water
+                stressLevel = ext.stressLevel
+                universityYear = ext.universityYear
+            }
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            dataStoreManager.customRoutinesFlow.collectLatest { routines ->
+                for (i in routines.indices) {
+                    if (i < customRoutines.size) {
+                        customRoutines[i] = routines[i]
+                    }
+                }
             }
         }
     }

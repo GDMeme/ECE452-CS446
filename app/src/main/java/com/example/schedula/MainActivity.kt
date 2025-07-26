@@ -13,8 +13,15 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class MainActivity : ComponentActivity() {
+    private lateinit var dataStoreManager: DataStoreManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        dataStoreManager = DataStoreManager(applicationContext)
+
+        // Load stored data into OnboardingDataClass
+        OnboardingDataClass.loadFromDataStore(dataStoreManager)
+
         setContent {
             SchedulaTheme {
                 SchedulaApp()
@@ -22,6 +29,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
 
 @Composable
 fun SchedulaApp() {
@@ -34,58 +42,6 @@ fun SchedulaApp() {
             while (calendar.get(Calendar.MONTH) == Calendar.JULY) {
                 val dateStr = dateFormat.format(calendar.time)
                 val dayName = dayFormat.format(calendar.time).uppercase()
-
-                // Static recurring events
-                when (calendar.get(Calendar.DAY_OF_WEEK)) {
-                    Calendar.MONDAY -> {
-                        add(Event("🍽️ Breakfast", "08:00", "08:30", dateStr))
-                        add(Event("💡 Study Session 1", "09:00", "10:00", dateStr))
-                        add(Event("🍱 Lunch", "12:00", "13:00", dateStr))
-                        add(Event("🍽️ Dinner", "18:00", "19:00", dateStr))
-                        add(Event("💡 Study Session 2", "20:00", "21:00", dateStr))
-                    }
-                    Calendar.TUESDAY -> {
-                        add(Event("🍽️ Breakfast", "08:00", "08:30", dateStr))
-                        add(Event("💡 Study Session 1", "09:00", "10:00", dateStr))
-                        add(Event("🍱 Lunch", "12:00", "13:00", dateStr))
-                        add(Event("🏋️ Exercise", "18:00", "19:00", dateStr))
-                        add(Event("🍽️ Dinner", "18:00", "19:00", dateStr))
-                        add(Event("🎬 Movie Night", "21:00", "22:00", dateStr))
-                        add(Event("💡 Study Session 2", "20:00", "21:00", dateStr))
-                    }
-                    Calendar.WEDNESDAY -> {
-                        add(Event("🍽️ Breakfast", "08:00", "08:30", dateStr))
-                        add(Event("💡 Study Session 1", "09:00", "10:00", dateStr))
-                        add(Event("🍱 Lunch", "12:00", "13:00", dateStr))
-                        add(Event("🏃 Exercise", "15:00", "16:00", dateStr))
-                        add(Event("💡 Study Session", "17:00", "18:00", dateStr))
-                        add(Event("🍽️ Dinner", "18:00", "19:00", dateStr))
-                        add(Event("💡 Study Session 2", "20:00", "21:00", dateStr))
-                    }
-                    Calendar.THURSDAY -> {
-                        add(Event("🍽️ Breakfast", "08:00", "08:30", dateStr))
-                        add(Event("💡 Study Session 1", "09:00", "10:00", dateStr))
-                        add(Event("🧘 Yoga", "10:00", "11:00", dateStr))
-                        add(Event("🍱 Lunch", "12:00", "13:00", dateStr))
-                        add(Event("🍽️ Dinner", "18:00", "19:00", dateStr))
-                        add(Event("💡 Study Session 2", "20:00", "21:00", dateStr))
-                    }
-                    Calendar.FRIDAY -> {
-                        add(Event("🍽️ Breakfast", "08:00", "08:30", dateStr))
-                        add(Event("💡 Study Session 1", "09:00", "10:00", dateStr))
-                        add(Event("🍱 Lunch", "12:00", "13:00", dateStr))
-                        add(Event("🎸 Guitar Practice", "14:00", "15:00", dateStr))
-                        add(Event("🍽️ Dinner", "18:00", "19:00", dateStr))
-                        add(Event("💡 Study Session 2", "20:00", "21:00", dateStr))
-                    }
-                    Calendar.SATURDAY, Calendar.SUNDAY -> {
-                        add(Event("🍽️ Breakfast", "08:00", "08:30", dateStr))
-                        add(Event("💡 Study Session 1", "09:00", "10:00", dateStr))
-                        add(Event("🍱 Lunch", "12:00", "13:00", dateStr))
-                        add(Event("🍽️ Dinner", "18:00", "19:00", dateStr))
-                        add(Event("💡 Study Session 2", "20:00", "21:00", dateStr))
-                    }
-                }
 
                 // Add course schedule from onboarding
                 OnboardingDataClass.scheduleData.forEach { item ->

@@ -116,6 +116,7 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                             continue
                         }
 
+                        // Ignore ECE401 (Information Session)
                         if (currentCourse == null || currentCourse == "ECE 401") continue
 
                         try {
@@ -199,10 +200,25 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                             })
                         }
 
-                        val flexibleTasks = JSONArray().apply {
-                            put("Study")
-                            put("Workout")
-                            put("Read")
+                        // Get flexible tasks (questionnaire data)
+                        val flexibleTasks = JSONArray()
+
+                        if (OnboardingDataClass.studyHours.isNotBlank()) {
+                            flexibleTasks.put("Study")
+                        }
+
+                        if (!OnboardingDataClass.exerciseFrequency.equals("Never", ignoreCase = true)) {
+                            flexibleTasks.put("Workout")
+                        }
+
+                        if (OnboardingDataClass.hobby.isNotBlank()) {
+                            flexibleTasks.put(OnboardingDataClass.hobby)
+                        }
+
+                        OnboardingDataClass.customRoutines.forEach { routine ->
+                            if (routine.isNotBlank()) {
+                                flexibleTasks.put(routine)
+                            }
                         }
 
                         val payload = JSONObject().apply {
@@ -215,7 +231,7 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                             put("payload", payload)
                         }
 
-                        // Send via WebSocket instead of HTTP POST
+                        // Send via WebSocket
                         CoroutineScope(Dispatchers.Main).launch {
                             sendScheduleRequestOverWebSocket(json,
                                 onResponse = { responseText ->
