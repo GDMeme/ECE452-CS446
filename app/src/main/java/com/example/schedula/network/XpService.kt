@@ -1,6 +1,7 @@
 package com.example.schedula.network
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonArrayRequest
@@ -9,7 +10,7 @@ import com.android.volley.toolbox.Volley
 import org.json.JSONObject
 
 object XpService {
-    private const val BASE_URL = "https://your-api.onrender.com"
+    private const val BASE_URL = "https://schedula-api.onrender.com"
 
     fun sendXpToBackend(userId: String, xp: Int, activity: String, context: Context) {
         val url = "$BASE_URL/api/xp"
@@ -21,10 +22,11 @@ object XpService {
 
         val request = JsonObjectRequest(Request.Method.POST, url, json,
             { response ->
-                val totalXp = response.getInt("total_xp")
+                val totalXp = response.optInt("total_xp", -1)
                 Toast.makeText(context, "XP updated: $totalXp", Toast.LENGTH_SHORT).show()
             },
-            {
+            { error ->
+                Log.e("XpService", "Failed to send XP", error)
                 Toast.makeText(context, "Failed to send XP", Toast.LENGTH_SHORT).show()
             }
         )
@@ -39,12 +41,16 @@ object XpService {
                 val leaderboard = mutableListOf<Pair<String, Int>>()
                 for (i in 0 until response.length()) {
                     val obj = response.getJSONObject(i)
-                    leaderboard.add(Pair(obj.getString("user_id"), obj.getInt("xp")))
+                    val userId = obj.optString("user_id", "unknown")
+                    val xp = obj.optInt("xp", 0)
+                    leaderboard.add(Pair(userId, xp))
                 }
                 onResult(leaderboard)
             },
-            {
+            { error ->
+                Log.e("XpService", "Failed to load leaderboard", error)
                 Toast.makeText(context, "Failed to load leaderboard", Toast.LENGTH_SHORT).show()
+                onResult(emptyList())
             }
         )
 

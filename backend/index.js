@@ -5,8 +5,20 @@ const app = express();
 app.use(cors());              // Allow requests from your Android app
 app.use(express.json());      // Parse JSON request bodies
 
-// In-memory leaderboard
-let leaderboard = {};
+// In-memory leaderboard with mock data
+let leaderboard = {
+  "alice": 1200,
+  "bob": 950,
+  "carol": 1500,
+  "dave": 700,
+  "eve": 1100,
+  "frank": 600,
+  "grace": 1400,
+  "heidi": 500,
+  "ivan": 1300,
+  "judy": 900,
+  "mallory": 400
+};
 
 // POST /api/xp — Add XP for a user
 app.post("/api/xp", (req, res) => {
@@ -27,11 +39,12 @@ app.post("/api/xp", (req, res) => {
   res.json({ status: "XP added", total_xp: leaderboard[user_id] });
 });
 
-// GET /api/leaderboard — Return sorted leaderboard
+// GET /api/leaderboard — Return top 10 leaderboard
 app.get("/api/leaderboard", (req, res) => {
   const sorted = Object.entries(leaderboard)
     .map(([user_id, xp]) => ({ user_id, xp }))
-    .sort((a, b) => b.xp - a.xp);  // Sort by XP descending
+    .sort((a, b) => b.xp - a.xp)
+    .slice(0, 10);  // Limit to top 10
 
   res.json(sorted);
 });
