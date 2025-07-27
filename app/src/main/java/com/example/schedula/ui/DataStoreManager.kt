@@ -1,15 +1,18 @@
 package com.example.schedula.ui
 
 import android.content.Context
+import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.flow.first
 
 // Create DataStore property delegate
 private val Context.dataStore by preferencesDataStore("user_preferences")
@@ -17,6 +20,7 @@ private val Context.dataStore by preferencesDataStore("user_preferences")
 class DataStoreManager(private val context: Context) {
 
     companion object {
+        // Lifestyle keys
         val BED_TIME = stringPreferencesKey("bed_time")
         val WAKE_TIME = stringPreferencesKey("wake_time")
         val EXERCISE_FREQ = stringPreferencesKey("exercise_frequency")
@@ -30,9 +34,13 @@ class DataStoreManager(private val context: Context) {
         val UNIVERSITY_YEAR = stringPreferencesKey("university_year")
 
         val CUSTOM_ROUTINES = stringPreferencesKey("custom_routines_json")
+
+        // Events keys
+        val FIXED_EVENTS_JSON = stringPreferencesKey("fixed_events_json")
+        val FLEXIBLE_EVENTS_JSON = stringPreferencesKey("flexible_events_json")
     }
 
-    // Save simple strings
+    // Save lifestyle data
     suspend fun saveLifestyleData(bed: String, wake: String, exercise: String) {
         context.dataStore.edit { prefs ->
             prefs[BED_TIME] = bed
@@ -68,8 +76,32 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
-    // Flows to observe the saved data
+    // Event saving
+    suspend fun saveFixedEvents(json: String) {
+        context.dataStore.edit { prefs ->
+            prefs[FIXED_EVENTS_JSON] = json
+        }
+    }
 
+    suspend fun saveFlexibleEvents(json: String) {
+        context.dataStore.edit { prefs ->
+            prefs[FLEXIBLE_EVENTS_JSON] = json
+        }
+    }
+
+    suspend fun getFixedEvents(): String? {
+        return context.dataStore.data.map { prefs ->
+            prefs[FIXED_EVENTS_JSON]
+        }.firstOrNull()
+    }
+
+    suspend fun getFlexibleEvents(): String? {
+        return context.dataStore.data.map { prefs ->
+            prefs[FLEXIBLE_EVENTS_JSON]
+        }.firstOrNull()
+    }
+
+    // Observe data flows
     val lifestyleDataFlow: Flow<Triple<String, String, String>> =
         context.dataStore.data.map { prefs ->
             Triple(
@@ -110,4 +142,15 @@ class DataStoreManager(private val context: Context) {
             emptyList()
         }
     }
+
+    suspend fun hasExistingSchedule(): Boolean {
+        val dataStoreManager = DataStoreManager(context)
+        val prefs = context.dataStore.data.first()
+        val fixed = prefs[FIXED_EVENTS_JSON]?.isNotBlank() ?: false
+        val flexible = prefs[FLEXIBLE_EVENTS_JSON]?.isNotBlank() ?: false
+        val routines = prefs[CUSTOM_ROUTINES]?.isNotBlank() ?: false
+
+        return fixed || flexible || routines
+    }
+
 }

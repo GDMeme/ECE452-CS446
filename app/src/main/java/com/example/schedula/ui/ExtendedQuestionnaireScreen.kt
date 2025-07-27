@@ -12,18 +12,24 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
 
 @Composable
 fun ExtendedLifestyleScreen(
     navController: NavController,
     onNext: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val dataStoreManager = remember { DataStoreManager(context) }
+    val coroutineScope = rememberCoroutineScope()
+
     var studyHours by remember { mutableStateOf("") }
     var steps by remember { mutableStateOf("") }
     var water by remember { mutableStateOf("") }
@@ -44,7 +50,6 @@ fun ExtendedLifestyleScreen(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Center
     ) {
-        // Top bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -156,15 +161,36 @@ fun ExtendedLifestyleScreen(
 
         Button(
             onClick = {
+                val study = studyHours
+                val socialize = socializeOpts[socializeIndex]
+                val hob = hobby
+                val stepsWalked = steps
+                val waterIntake = water
+                val stress = stressOpts[stressIndex]
+                val year = uniYears[uniYear]
+
                 OnboardingDataClass.updateExtendedLifestyleData(
-                    study = studyHours,
-                    socialize = socializeOpts[socializeIndex],
-                    hob = hobby,
-                    stepsWalked = steps,
-                    waterIntake = water,
-                    stress = stressOpts[stressIndex],
-                    year = uniYears[uniYear]
+                    study = study,
+                    socialize = socialize,
+                    hob = hob,
+                    stepsWalked = stepsWalked,
+                    waterIntake = waterIntake,
+                    stress = stress,
+                    year = year
                 )
+
+                coroutineScope.launch {
+                    dataStoreManager.saveExtendedLifestyleData(
+                        study = study,
+                        socialize = socialize,
+                        hob = hob,
+                        stepsWalked = stepsWalked,
+                        waterIntake = waterIntake,
+                        stress = stress,
+                        year = year
+                    )
+                }
+
                 onNext()
                 navController.navigate("hobbiesQuestionnaire")
             },

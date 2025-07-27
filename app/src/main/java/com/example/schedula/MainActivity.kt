@@ -9,8 +9,13 @@ import androidx.compose.runtime.remember
 import androidx.navigation.compose.*
 import com.example.schedula.ui.*
 import com.example.schedula.ui.theme.SchedulaTheme
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+
 
 class MainActivity : ComponentActivity() {
     private lateinit var dataStoreManager: DataStoreManager
@@ -19,8 +24,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         dataStoreManager = DataStoreManager(applicationContext)
 
-        // Load stored data into OnboardingDataClass
-        OnboardingDataClass.loadFromDataStore(dataStoreManager)
+        // Load data into OnboardingDataClass
+        lifecycleScope.launch {
+            OnboardingDataClass.loadFromDataStore(dataStoreManager)
+        }
 
         setContent {
             SchedulaTheme {
@@ -30,43 +37,17 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
 @Composable
 fun SchedulaApp() {
-    val eventList = remember {
-        mutableStateListOf<Event>().apply {
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val dayFormat = SimpleDateFormat("EEEE", Locale.getDefault())
-            val calendar = Calendar.getInstance().apply { set(2025, Calendar.JULY, 1) }
-
-            while (calendar.get(Calendar.MONTH) == Calendar.JULY) {
-                val dateStr = dateFormat.format(calendar.time)
-                val dayName = dayFormat.format(calendar.time).uppercase()
-
-                // Add course schedule from onboarding
-                OnboardingDataClass.scheduleData.forEach { item ->
-                    if (item.day.uppercase() == dayName) {
-                        add(
-                            Event(
-                                title = "${item.courseCode} @ ${item.location}",
-                                startTime = item.startTime,
-                                endTime = item.endTime,
-                                date = dateStr
-                            )
-                        )
-                    }
-                }
-
-                calendar.add(Calendar.DAY_OF_MONTH, 1)
-            }
-        }
-    }
-
     val navController = rememberNavController()
+
+    // ✅ Check login state
+    val isUserSignedIn = Firebase.auth.currentUser != null
+    val startDestination = if (isUserSignedIn) "home" else "login"
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = startDestination
     ) {
         composable("login") { LoginScreen(navController) }
         composable("signup") { SignUpScreen(navController) }
@@ -74,7 +55,7 @@ fun SchedulaApp() {
             LifestyleQuestionnaireScreen(navController, {}, {})
         }
         composable("scheduleUpload") {
-            ScheduleUploadScreen(navController, eventList)
+            ScheduleUploadScreen(navController)
         }
         composable("success") { SuccessScreen(navController) }
         composable("leaderboard") { LeaderboardScreen(navController) }
@@ -90,7 +71,7 @@ fun SchedulaApp() {
         }
         composable("home") { HomeScreen(navController) }
         composable("calendar") {
-            CalendarScreen(navController, eventList)
+            CalendarScreen(navController)
         }
         composable("questionsMenu") {
             QuestionnaireMenuScreen(navController)
@@ -98,6 +79,5 @@ fun SchedulaApp() {
         composable("profile") {
             ProfileScreen(navController = navController)
         }
-
     }
 }

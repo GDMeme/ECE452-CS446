@@ -26,8 +26,9 @@ import com.example.schedula.ui.components.AddEventDialog
 import com.example.schedula.ui.components.BottomNavBar
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class Event(
     val title: String,
     val startTime: String,
@@ -36,7 +37,8 @@ data class Event(
 )
 
 @Composable
-fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Event>) {
+fun CalendarScreen(navController: NavController) {
+    val eventList = OnboardingDataClass.fixedEvents + OnboardingDataClass.flexibleEvents
     val backgroundColor = Color(0xFFF0E7F4)
     val purple = Color(0xFF9C89B8)
     val lightPurple = Color(0xFFE6DEF6)
@@ -59,7 +61,8 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
         AddEventDialog(
             onDismiss = { showAddDialog = false },
             onSave = { data ->
-                eventList.add(Event(data.title, data.startTime, data.endTime, data.date))
+                // Just add to flexible events, I think this is fine
+                OnboardingDataClass.flexibleEvents.add(Event(data.title, data.startTime, data.endTime, data.date))
                 selectedDate = data.date
             }
         )

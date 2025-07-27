@@ -1,11 +1,10 @@
 package com.example.schedula.ui
 
 import androidx.compose.runtime.mutableStateListOf
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlin.collections.set
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 
 object OnboardingDataClass {
     var bedTime: String = ""
@@ -24,6 +23,9 @@ object OnboardingDataClass {
     val customRoutines: MutableList<String> = MutableList(4) { "" }
     val scheduleData = mutableStateListOf<Event>()
 
+    val fixedEvents = mutableStateListOf<Event>()
+    val flexibleEvents = mutableStateListOf<Event>()
+
     fun clearAll() {
         bedTime = ""
         wakeTime = ""
@@ -38,6 +40,8 @@ object OnboardingDataClass {
         hobbiesSelected.clear()
         repeat(4) { customRoutines[it] = "" }
         scheduleData.clear()
+        fixedEvents.clear()
+        flexibleEvents.clear()
     }
 
     fun updateLifestyleData(bed: String, wake: String, exercise: String) {
@@ -69,48 +73,94 @@ object OnboardingDataClass {
         hobbiesSelected.putAll(selected)
     }
 
-    fun updateCustomRoutines(routines: List<String>) {
-        for (i in routines.indices) {
-            if (i < customRoutines.size) {
-                customRoutines[i] = routines[i]
-            }
+    // Public wrapper to save all
+    suspend fun saveToDataStore(dataStoreManager: DataStoreManager) {
+        saveLifestyle(dataStoreManager)
+        saveExtendedLifestyle(dataStoreManager)
+        saveCustomRoutines(dataStoreManager)
+        saveEvents(dataStoreManager)
+    }
+
+    // Public wrapper to load all
+    suspend fun loadFromDataStore(dataStoreManager: DataStoreManager) {
+        loadLifestyle(dataStoreManager)
+        loadExtendedLifestyle(dataStoreManager)
+        loadCustomRoutines(dataStoreManager)
+        loadEvents(dataStoreManager)
+    }
+
+    // Modular private saves
+    private suspend fun saveLifestyle(dataStoreManager: DataStoreManager) {
+        dataStoreManager.saveLifestyleData(
+            bed = bedTime,
+            wake = wakeTime,
+            exercise = exerciseFrequency
+        )
+    }
+
+    private suspend fun saveExtendedLifestyle(dataStoreManager: DataStoreManager) {
+        dataStoreManager.saveExtendedLifestyleData(
+            study = studyHours,
+            socialize = socializeFrequency,
+            hob = hobby,
+            stepsWalked = steps,
+            waterIntake = water,
+            stress = stressLevel,
+            year = universityYear
+        )
+    }
+
+    private suspend fun saveCustomRoutines(dataStoreManager: DataStoreManager) {
+        dataStoreManager.saveCustomRoutines(customRoutines)
+    }
+
+    private suspend fun saveEvents(dataStoreManager: DataStoreManager) {
+        val fixedJson = Json.encodeToString(fixedEvents.toList())
+        val flexibleJson = Json.encodeToString(flexibleEvents.toList())
+        dataStoreManager.saveFixedEvents(fixedJson)
+        dataStoreManager.saveFlexibleEvents(flexibleJson)
+    }
+
+    // Modular private loads
+    private suspend fun loadLifestyle(dataStoreManager: DataStoreManager) {
+        val lifestyle = dataStoreManager.lifestyleDataFlow.firstOrNull()
+        lifestyle?.let {
+            updateLifestyleData(
+                bed = it.first,
+                wake = it.second,
+                exercise = it.third
+            )
         }
     }
 
-    fun loadFromDataStore(dataStoreManager: DataStoreManager) {
-        CoroutineScope(Dispatchers.IO).launch {
-            dataStoreManager.lifestyleDataFlow.collectLatest { (bed, wake, exercise) ->
-                bedTime = bed
-                wakeTime = wake
-                exerciseFrequency = exercise
-            }
+    private suspend fun loadExtendedLifestyle(dataStoreManager: DataStoreManager) {
+        val extended = dataStoreManager.extendedLifestyleDataFlow.firstOrNull()
+        extended?.let {
+            updateExtendedLifestyleData(
+                study = it.studyHours,
+                socialize = it.socializeFreq,
+                hob = it.hobby,
+                stepsWalked = it.steps,
+                waterIntake = it.water,
+                stress = it.stressLevel,
+                year = it.universityYear
+            )
         }
+    }
 
-        CoroutineScope(Dispatchers.IO).launch {
-            dataStoreManager.extendedLifestyleDataFlow.collectLatest { ext ->
-                studyHours = ext.studyHours
-                socializeFrequency = ext.socializeFreq
-                hobby = ext.hobby
-                steps = ext.steps
-                water = ext.water
-                stressLevel = ext.stressLevel
-                universityYear = ext.universityYear
-            }
-        }
+    private suspend fun loadCustomRoutines(dataStoreManager: DataStoreManager) {
+        val routines = dataStoreManager.customRoutinesFlow.firstOrNull() ?: emptyList()
+        customRoutines.clear()
+        customRoutines.addAll(List(4) { routines.getOrNull(it) ?: "" })
+    }
 
-        CoroutineScope(Dispatchers.IO).launch {
-            dataStoreManager.customRoutinesFlow.collectLatest { routines ->
-                for (i in routines.indices) {
-                    if (i < customRoutines.size) {
-                        customRoutines[i] = routines[i]
-                    }
-                }
-            }
-        }
+    private suspend fun loadEvents(dataStoreManager: DataStoreManager) {
+        val fixedJson = dataStoreManager.getFixedEvents() ?: "[]"
+        fixedEvents.clear()
+        fixedEvents.addAll(Json.decodeFromString(fixedJson))
+
+        val flexibleJson = dataStoreManager.getFlexibleEvents() ?: "[]"
+        flexibleEvents.clear()
+        flexibleEvents.addAll(Json.decodeFromString(flexibleJson))
     }
 }
-
-// Example of adding dummy data:
-// QuestionnaireDataStore.scheduleData.add(
-//     ScheduleEntry("MATH101", "08:30", "09:50", "Monday", "Room 101")
-// )
