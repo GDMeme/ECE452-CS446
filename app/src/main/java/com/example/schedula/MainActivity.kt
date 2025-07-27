@@ -19,31 +19,36 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private lateinit var dataStoreManager: DataStoreManager
+    private var startDestination = "login" // default is login page
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         dataStoreManager = DataStoreManager(applicationContext)
 
-        // Load data into OnboardingDataClass
         lifecycleScope.launch {
             OnboardingDataClass.loadFromDataStore(dataStoreManager)
-        }
 
-        setContent {
-            SchedulaTheme {
-                SchedulaApp()
+            val isUserSignedIn = Firebase.auth.currentUser != null
+            val questionnaireCompleted = dataStoreManager.isQuestionnaireCompleted()
+
+            startDestination = when {
+                !isUserSignedIn -> "login"
+                !questionnaireCompleted -> "lifestyleQuestionnaire" // or first questionnaire screen
+                else -> "home"
+            }
+
+            setContent {
+                SchedulaTheme {
+                    SchedulaApp(startDestination)
+                }
             }
         }
     }
 }
 
 @Composable
-fun SchedulaApp() {
+fun SchedulaApp(startDestination: String) {
     val navController = rememberNavController()
-
-    // ✅ Check login state
-    val isUserSignedIn = Firebase.auth.currentUser != null
-    val startDestination = if (isUserSignedIn) "home" else "login"
 
     NavHost(
         navController = navController,

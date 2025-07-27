@@ -4,8 +4,9 @@ import android.content.Context
 import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -38,6 +39,8 @@ class DataStoreManager(private val context: Context) {
         // Events keys
         val FIXED_EVENTS_JSON = stringPreferencesKey("fixed_events_json")
         val FLEXIBLE_EVENTS_JSON = stringPreferencesKey("flexible_events_json")
+
+        val QUESTIONNAIRE_COMPLETED = booleanPreferencesKey("questionnaire_completed")
     }
 
     // Save lifestyle data
@@ -153,4 +156,15 @@ class DataStoreManager(private val context: Context) {
         return fixed || flexible || routines
     }
 
+    suspend fun setQuestionnaireCompleted(completed: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[QUESTIONNAIRE_COMPLETED] = completed
+        }
+    }
+
+    suspend fun isQuestionnaireCompleted(): Boolean {
+        // Example: check if any key indicating completion exists or a boolean flag
+        val prefs = context.dataStore.data.first()
+        return prefs[PreferencesKeys.QUESTIONNAIRE_COMPLETED] ?: false
+    }
 }
