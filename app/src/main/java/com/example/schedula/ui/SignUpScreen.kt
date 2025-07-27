@@ -20,12 +20,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.schedula.AuthenticationRepo
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.Timestamp
 
 @Composable
 fun SignUpScreen(navController: NavController) {
@@ -33,12 +35,12 @@ fun SignUpScreen(navController: NavController) {
     var name by remember { mutableStateOf(TextFieldValue("")) }
     var password by remember { mutableStateOf(TextFieldValue("")) }
     var pwVisible by remember { mutableStateOf(false) }
-    var context = LocalContext.current
+    val context = LocalContext.current
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFEFF4F9)) // light blue background
+            .background(Color(0xFFEFF4F9))
             .padding(horizontal = 24.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -70,8 +72,6 @@ fun SignUpScreen(navController: NavController) {
             )
 
             Spacer(modifier = Modifier.height(24.dp))
-
-            //add a parameter for Name
 
             OutlinedTextField(
                 value = name,
@@ -115,11 +115,7 @@ fun SignUpScreen(navController: NavController) {
                 label = { Text("Password") },
                 visualTransformation = if (pwVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    val icon = if (pwVisible) {
-                        Icons.Filled.VisibilityOff
-                    } else {
-                        Icons.Default.Visibility
-                    }
+                    val icon = if (pwVisible) Icons.Filled.VisibilityOff else Icons.Default.Visibility
                     val description = if (pwVisible) "Hide password" else "Show password"
                     IconButton(onClick = { pwVisible = !pwVisible }) {
                         Icon(imageVector = icon, contentDescription = description)
@@ -155,22 +151,45 @@ fun SignUpScreen(navController: NavController) {
 
             Button(
                 onClick = {
-                    val email = email.text.trim() //do I need to keep the .trim() here?
-                    val passwrd = password.text //do I need a .trim() here?
-                    val nameUser = name.text
+                    val emailText = email.text.trim()
+                    val passwordText = password.text.trim()
+                    val nameText = name.text.trim()
 
-                    if (email.isNotBlank() && passwrd.isNotBlank()) {
-                        //call authentication here
-                        AuthenticationRepo.register(nameUser, email, passwrd ) { success, error ->
-                            if(success) {
-                                navController.navigate("login")
-                            }
-                            else {
+                    if (emailText.isNotBlank() && passwordText.isNotBlank()) {
+                        AuthenticationRepo.register(nameText, emailText, passwordText) { success, error ->
+                            if (success) {
+                                val user = FirebaseAuth.getInstance().currentUser
+                                if (user != null) {
+                                    // Optionally set display name in Firebase Auth
+                                    val profileUpdates = UserProfileChangeRequest.Builder()
+                                        .setDisplayName(nameText)
+                                        .build()
+                                    user.updateProfile(profileUpdates)
+
+                                    val db = FirebaseFirestore.getInstance()
+                                    val userData = hashMapOf(
+                                        "userId" to user.uid,
+                                        "username" to nameText,
+                                        "userXP" to 0,
+                                        "email" to user.email,
+                                        "createdAt" to Timestamp.now()
+                                    )
+                                    db.collection("users").document(user.uid)
+                                        .set(userData)
+                                        .addOnSuccessListener {
+                                            Toast.makeText(context, "Account created!", Toast.LENGTH_SHORT).show()
+                                            navController.navigate("login")
+                                        }
+                                        .addOnFailureListener { e ->
+                                            Toast.makeText(context, "Firestore error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                        }
+                                } else {
+                                    Toast.makeText(context, "Error: User is null after sign-up", Toast.LENGTH_LONG).show()
+                                }
+                            } else {
                                 Toast.makeText(context, error ?: "Sign up failed", Toast.LENGTH_LONG).show()
                             }
                         }
-
-
                     }
                 },
                 shape = RoundedCornerShape(16.dp),
