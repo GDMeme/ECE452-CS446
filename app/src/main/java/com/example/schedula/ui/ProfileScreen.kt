@@ -27,6 +27,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.schedula.ui.components.BottomNavBar
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+
+// No LeaderboardUser data class here
 
 @Composable
 fun ProfileScreen(navController: NavController) {
@@ -36,6 +40,33 @@ fun ProfileScreen(navController: NavController) {
     var isEditingName by remember { mutableStateOf(false) }
     var username by remember { mutableStateOf("Alex") }
     var selectedTab by remember { mutableStateOf("Global") }
+
+    // State to hold the leaderboard data as a list of Pair<String, Long> (username, userXP)
+    val globalLeaderboardUsers = remember { mutableStateListOf<Pair<String, Long>>() }
+
+    // Initialize Firestore
+    val db = FirebaseFirestore.getInstance()
+
+    // Fetch leaderboard data when the composable enters the composition
+    LaunchedEffect(Unit) {
+        db.collection("users") // Assuming your collection is named "users" as per your image
+            .orderBy("userXP", Query.Direction.DESCENDING) // Order by userXP descending
+            .limit(3) // Limit to the top 3 users
+            .get()
+            .addOnSuccessListener { result ->
+                globalLeaderboardUsers.clear()
+                for (document in result) {
+                    val name = document.getString("username") ?: "Unknown" // Get "username" field
+                    val xp = document.getLong("userXP") ?: 0L // Get "userXP" field
+                    globalLeaderboardUsers.add(name to xp)
+                }
+            }
+            .addOnFailureListener { exception ->
+                // Handle errors
+                println("Error getting leaderboard documents: $exception")
+            }
+    }
+
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -140,14 +171,24 @@ fun ProfileScreen(navController: NavController) {
                     }
 
                     if (selectedTab == "Global") {
+                        // Display the current user's rank (placeholder for now)
+                        // Note: If you want this to be the *actual* user's data from Firestore,
+                        // you'd need to fetch that separately based on the current user's ID.
                         LeaderboardEntry(imageUri, "Rank #2,339", "Top 1%", "88,242 XP", "Out of 3,376,487 users")
                         Divider()
-                        LeaderboardRow(Icons.Default.AccountCircle, "Amy Winnar", "88242")
-                        Divider()
-                        LeaderboardRow(Icons.Default.AccountCircle, "CarsonP", "88230")
-                        Divider()
-                        LeaderboardRow(Icons.Default.AccountCircle, "Shannanisthebest", "88205")
-                        Divider()
+                        // Dynamically display leaderboard rows from Firestore using the direct field access
+                        if (globalLeaderboardUsers.isNotEmpty()) {
+                            globalLeaderboardUsers.forEach { (name, xp) -> // Destructure the Pair
+                                LeaderboardRow(
+                                    icon = Icons.Default.AccountCircle,
+                                    name = name,
+                                    score = xp.toString()
+                                )
+                                Divider()
+                            }
+                        } else {
+                            Text("Loading leaderboard...", modifier = Modifier.padding(top = 16.dp), color = Color.Gray)
+                        }
                     } else {
                         Text("No friends yet!", modifier = Modifier.padding(top = 16.dp), color = Color.Gray)
                     }
