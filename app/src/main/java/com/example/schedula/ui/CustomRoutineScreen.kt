@@ -90,15 +90,17 @@ fun CustomRoutineScreen(
         Button(
             onClick = {
                 val nonEmptyRoutines = routines.map { it.value }.filter { it.isNotBlank() }
+
+                // Update datastore and OnboardingDataClass
                 coroutineScope.launch {
                     dataStoreManager.saveCustomRoutines(nonEmptyRoutines)
+
                     OnboardingDataClass.customRoutines.clear()
                     OnboardingDataClass.customRoutines.addAll(List(4) { nonEmptyRoutines.getOrNull(it) ?: "" })
 
                     // Mark questionnaire complete here
                     dataStoreManager.setQuestionnaireCompleted(true)
                 }
-                OnboardingDataClass.updateHobbiesSelection(selected)
                 onNext()
                 navController.navigate("scheduleUpload")
             },

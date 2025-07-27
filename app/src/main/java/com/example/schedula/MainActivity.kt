@@ -65,9 +65,6 @@ fun SchedulaApp(startDestination: String) {
         composable("success") { SuccessScreen(navController) }
         composable("leaderboard") { LeaderboardScreen(navController) }
         composable("timer") { TimerScreen(navController) }
-        composable("extendedQuestionnaire") {
-            ExtendedLifestyleScreen(navController, {})
-        }
         composable("hobbiesQuestionnaire") {
             HobbySelectionScreen(navController, {})
         }

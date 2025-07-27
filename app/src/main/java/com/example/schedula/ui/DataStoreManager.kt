@@ -26,14 +26,7 @@ class DataStoreManager(private val context: Context) {
         val WAKE_TIME = stringPreferencesKey("wake_time")
         val EXERCISE_FREQ = stringPreferencesKey("exercise_frequency")
 
-        val STUDY_HOURS = stringPreferencesKey("study_hours")
-        val SOCIALIZE_FREQ = stringPreferencesKey("socialize_frequency")
-        val HOBBY = stringPreferencesKey("hobby")
-        val STEPS = stringPreferencesKey("steps")
-        val WATER = stringPreferencesKey("water")
-        val STRESS_LEVEL = stringPreferencesKey("stress_level")
-        val UNIVERSITY_YEAR = stringPreferencesKey("university_year")
-
+        // Custom Routine keys
         val CUSTOM_ROUTINES = stringPreferencesKey("custom_routines_json")
 
         // Events keys
@@ -41,6 +34,8 @@ class DataStoreManager(private val context: Context) {
         val FLEXIBLE_EVENTS_JSON = stringPreferencesKey("flexible_events_json")
 
         val QUESTIONNAIRE_COMPLETED = booleanPreferencesKey("questionnaire_completed")
+
+        val HOBBIES_KEY = stringPreferencesKey("hobbies_selection_json")
     }
 
     // Save lifestyle data
@@ -49,26 +44,6 @@ class DataStoreManager(private val context: Context) {
             prefs[BED_TIME] = bed
             prefs[WAKE_TIME] = wake
             prefs[EXERCISE_FREQ] = exercise
-        }
-    }
-
-    suspend fun saveExtendedLifestyleData(
-        study: String,
-        socialize: String,
-        hob: String,
-        stepsWalked: String,
-        waterIntake: String,
-        stress: String,
-        year: String
-    ) {
-        context.dataStore.edit { prefs ->
-            prefs[STUDY_HOURS] = study
-            prefs[SOCIALIZE_FREQ] = socialize
-            prefs[HOBBY] = hob
-            prefs[STEPS] = stepsWalked
-            prefs[WATER] = waterIntake
-            prefs[STRESS_LEVEL] = stress
-            prefs[UNIVERSITY_YEAR] = year
         }
     }
 
@@ -114,29 +89,6 @@ class DataStoreManager(private val context: Context) {
             )
         }
 
-    data class ExtendedLifestyleData(
-        val studyHours: String,
-        val socializeFreq: String,
-        val hobby: String,
-        val steps: String,
-        val water: String,
-        val stressLevel: String,
-        val universityYear: String
-    )
-
-    val extendedLifestyleDataFlow: Flow<ExtendedLifestyleData> =
-        context.dataStore.data.map { prefs ->
-            ExtendedLifestyleData(
-                studyHours = prefs[STUDY_HOURS] ?: "",
-                socializeFreq = prefs[SOCIALIZE_FREQ] ?: "",
-                hobby = prefs[HOBBY] ?: "",
-                steps = prefs[STEPS] ?: "",
-                water = prefs[WATER] ?: "",
-                stressLevel = prefs[STRESS_LEVEL] ?: "",
-                universityYear = prefs[UNIVERSITY_YEAR] ?: ""
-            )
-        }
-
     val customRoutinesFlow: Flow<List<String>> = context.dataStore.data.map { prefs ->
         val jsonString = prefs[CUSTOM_ROUTINES] ?: "[]"
         try {
@@ -165,6 +117,16 @@ class DataStoreManager(private val context: Context) {
     suspend fun isQuestionnaireCompleted(): Boolean {
         // Example: check if any key indicating completion exists or a boolean flag
         val prefs = context.dataStore.data.first()
-        return prefs[PreferencesKeys.QUESTIONNAIRE_COMPLETED] ?: false
+        return prefs[QUESTIONNAIRE_COMPLETED] == true
+    }
+
+    suspend fun saveHobbiesSelection(json: String) {
+        context.dataStore.edit { prefs ->
+            prefs[HOBBIES_KEY] = json
+        }
+    }
+
+    suspend fun getHobbiesSelection(): String? {
+        return context.dataStore.data.firstOrNull()?.get(HOBBIES_KEY)
     }
 }

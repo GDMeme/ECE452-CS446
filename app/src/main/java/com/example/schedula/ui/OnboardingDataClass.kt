@@ -19,7 +19,7 @@ object OnboardingDataClass {
     var stressLevel: String = ""
     var universityYear: String = ""
 
-    val hobbiesSelected: MutableMap<String, Boolean> = mutableMapOf()
+    val hobbiesSelected: MutableList<String> = mutableListOf()
     val customRoutines: MutableList<String> = MutableList(4) { "" }
     val scheduleData = mutableStateListOf<Event>()
 
@@ -50,43 +50,25 @@ object OnboardingDataClass {
         exerciseFrequency = exercise
     }
 
-    fun updateExtendedLifestyleData(
-        study: String,
-        socialize: String,
-        hob: String,
-        stepsWalked: String,
-        waterIntake: String,
-        stress: String,
-        year: String
-    ) {
-        studyHours = study
-        socializeFrequency = socialize
-        hobby = hob
-        steps = stepsWalked
-        water = waterIntake
-        stressLevel = stress
-        universityYear = year
-    }
-
-    fun updateHobbiesSelection(selected: Map<String, Boolean>) {
+    fun updateHobbiesSelection(selected: List<String>) {
         hobbiesSelected.clear()
-        hobbiesSelected.putAll(selected)
+        hobbiesSelected.addAll(selected)
     }
 
     // Public wrapper to save all
     suspend fun saveToDataStore(dataStoreManager: DataStoreManager) {
         saveLifestyle(dataStoreManager)
-        saveExtendedLifestyle(dataStoreManager)
         saveCustomRoutines(dataStoreManager)
         saveEvents(dataStoreManager)
+        saveHobbiesSelection(dataStoreManager)
     }
 
     // Public wrapper to load all
     suspend fun loadFromDataStore(dataStoreManager: DataStoreManager) {
         loadLifestyle(dataStoreManager)
-        loadExtendedLifestyle(dataStoreManager)
         loadCustomRoutines(dataStoreManager)
         loadEvents(dataStoreManager)
+        loadHobbiesSelection(dataStoreManager)
     }
 
     // Modular private saves
@@ -95,18 +77,6 @@ object OnboardingDataClass {
             bed = bedTime,
             wake = wakeTime,
             exercise = exerciseFrequency
-        )
-    }
-
-    private suspend fun saveExtendedLifestyle(dataStoreManager: DataStoreManager) {
-        dataStoreManager.saveExtendedLifestyleData(
-            study = studyHours,
-            socialize = socializeFrequency,
-            hob = hobby,
-            stepsWalked = steps,
-            waterIntake = water,
-            stress = stressLevel,
-            year = universityYear
         )
     }
 
@@ -133,21 +103,6 @@ object OnboardingDataClass {
         }
     }
 
-    private suspend fun loadExtendedLifestyle(dataStoreManager: DataStoreManager) {
-        val extended = dataStoreManager.extendedLifestyleDataFlow.firstOrNull()
-        extended?.let {
-            updateExtendedLifestyleData(
-                study = it.studyHours,
-                socialize = it.socializeFreq,
-                hob = it.hobby,
-                stepsWalked = it.steps,
-                waterIntake = it.water,
-                stress = it.stressLevel,
-                year = it.universityYear
-            )
-        }
-    }
-
     private suspend fun loadCustomRoutines(dataStoreManager: DataStoreManager) {
         val routines = dataStoreManager.customRoutinesFlow.firstOrNull() ?: emptyList()
         customRoutines.clear()
@@ -162,5 +117,16 @@ object OnboardingDataClass {
         val flexibleJson = dataStoreManager.getFlexibleEvents() ?: "[]"
         flexibleEvents.clear()
         flexibleEvents.addAll(Json.decodeFromString(flexibleJson))
+    }
+
+    private suspend fun saveHobbiesSelection(dataStoreManager: DataStoreManager) {
+        val json = Json.encodeToString(hobbiesSelected)
+        dataStoreManager.saveHobbiesSelection(json)
+    }
+
+    private suspend fun loadHobbiesSelection(dataStoreManager: DataStoreManager) {
+        val json = dataStoreManager.getHobbiesSelection() ?: "[]"
+        val loaded = Json.decodeFromString<List<String>>(json)
+        updateHobbiesSelection(loaded)
     }
 }

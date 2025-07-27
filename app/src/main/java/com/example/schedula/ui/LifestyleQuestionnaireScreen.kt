@@ -189,6 +189,7 @@ fun LifestyleQuestionnaireScreen(
             onClick = {
                 val exerciseChoice = exerciseChoices[exerciseNum]
 
+                // Update datastore with lifestyle data
                 coroutineScope.launch {
                     dataStoreManager.saveLifestyleData(
                         bed = bedTime,
@@ -196,6 +197,13 @@ fun LifestyleQuestionnaireScreen(
                         exercise = exerciseChoice
                     )
                 }
+
+                // Update OnboardingDataClass with lifestyle data
+                OnboardingDataClass.updateLifestyleData(
+                    bed = bedTime,
+                    wake = wakeTime,
+                    exercise = exerciseChoice
+                )
 
                 onNext(
                     LifestyleQuestionnaireAnswers(
