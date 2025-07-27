@@ -38,14 +38,14 @@ fun ProfileScreen(navController: NavController) {
     val leaderboardColor = Color(0xFFE6DEF6)
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var isEditingName by remember { mutableStateOf(false) }
-    var username by remember { mutableStateOf("Alex") } // This should ideally be fetched from Firestore
-    var currentUserEmail by remember { mutableStateOf("test@uwaterloo.ca") } // This should also be dynamic
+    var username by remember { mutableStateOf("Alex") }
+    var currentUserEmail by remember { mutableStateOf("test@uwaterloo.ca") }
     var selectedTab by remember { mutableStateOf("Global") }
 
     val globalLeaderboardUsers = remember { mutableStateListOf<Pair<String, Long>>() }
     var currentUserRank by remember { mutableStateOf<Int?>(null) }
     var currentUserXp by remember { mutableStateOf<Long?>(null) }
-    var totalUsers by remember { mutableStateOf<Int?>(null) } // New state for total users
+    var totalUsers by remember { mutableStateOf<Int?>(null) }
 
     val db = FirebaseFirestore.getInstance()
     val auth = FirebaseAuth.getInstance()
@@ -70,7 +70,7 @@ fun ProfileScreen(navController: NavController) {
             .addOnSuccessListener { result ->
                 globalLeaderboardUsers.clear()
                 val allUsers = mutableListOf<Pair<String, Long>>()
-                totalUsers = result.size() // Get the total number of users
+                totalUsers = result.size()
 
                 for (document in result) {
                     val name = document.getString("username") ?: "Unknown"
@@ -82,7 +82,7 @@ fun ProfileScreen(navController: NavController) {
                         currentUserXp = xp
                     }
                 }
-                globalLeaderboardUsers.addAll(allUsers.take(3)) // Display top 3
+                globalLeaderboardUsers.addAll(allUsers.take(4))
             }
             .addOnFailureListener { exception ->
                 println("Error getting leaderboard documents: $exception")
@@ -179,7 +179,6 @@ fun ProfileScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Leaderboard
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = leaderboardColor),
@@ -194,10 +193,7 @@ fun ProfileScreen(navController: NavController) {
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
                     ) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TabChip("Friends", selectedTab == "Friends") { selectedTab = "Friends" }
-                            TabChip("Global", selectedTab == "Global") { selectedTab = "Global" }
-                        }
+                        TabChip("Global", selectedTab == "Global") { selectedTab = "Global" }
                         Icon(Icons.Default.Share, contentDescription = "Share")
                     }
 
@@ -207,7 +203,7 @@ fun ProfileScreen(navController: NavController) {
 
                         val topPercentage = if (currentUserRank != null && totalUsers != null && totalUsers != 0) {
                             val percentage = (currentUserRank!!.toDouble() / totalUsers!!.toDouble()) * 100
-                            "${percentage.roundToInt()}%" // You might want to format this differently for "Top N%"
+                            "${percentage.roundToInt()}%"
                         } else {
                             "N/A"
                         }
@@ -217,9 +213,9 @@ fun ProfileScreen(navController: NavController) {
                         LeaderboardEntry(
                             profileImageUri = imageUri,
                             rank = rankText,
-                            top = "Top ${topPercentage}", // Use the calculated percentage here
+                            top = "Top ${topPercentage}",
                             xp = xpText,
-                            userCount = userCountText // Use the dynamic total user count here
+                            userCount = userCountText
                         )
                         Divider()
                         if (globalLeaderboardUsers.isNotEmpty()) {
@@ -238,9 +234,6 @@ fun ProfileScreen(navController: NavController) {
                     } else {
                         Text("No friends yet!", modifier = Modifier.padding(top = 16.dp), color = Color.Gray)
                     }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Show more", color = Color.Gray, fontSize = 14.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
                 }
             }
         }
