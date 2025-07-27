@@ -27,10 +27,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.schedula.ui.components.BottomNavBar
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-
-// No LeaderboardUser data class here
+import kotlin.math.roundToInt
 
 @Composable
 fun ProfileScreen(navController: NavController) {
@@ -38,31 +38,53 @@ fun ProfileScreen(navController: NavController) {
     val leaderboardColor = Color(0xFFE6DEF6)
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var isEditingName by remember { mutableStateOf(false) }
-    var username by remember { mutableStateOf("Alex") }
+    var username by remember { mutableStateOf("Alex") } // This should ideally be fetched from Firestore
+    var currentUserEmail by remember { mutableStateOf("test@uwaterloo.ca") } // This should also be dynamic
     var selectedTab by remember { mutableStateOf("Global") }
 
-    // State to hold the leaderboard data as a list of Pair<String, Long> (username, userXP)
     val globalLeaderboardUsers = remember { mutableStateListOf<Pair<String, Long>>() }
+    var currentUserRank by remember { mutableStateOf<Int?>(null) }
+    var currentUserXp by remember { mutableStateOf<Long?>(null) }
+    var totalUsers by remember { mutableStateOf<Int?>(null) } // New state for total users
 
-    // Initialize Firestore
     val db = FirebaseFirestore.getInstance()
+    val auth = FirebaseAuth.getInstance()
 
-    // Fetch leaderboard data when the composable enters the composition
     LaunchedEffect(Unit) {
-        db.collection("users") // Assuming your collection is named "users" as per your image
-            .orderBy("userXP", Query.Direction.DESCENDING) // Order by userXP descending
-            .limit(3) // Limit to the top 3 users
+        val currentUser = auth.currentUser
+        currentUser?.let { user ->
+            currentUserEmail = user.email ?: "N/A"
+            db.collection("users").document(user.uid).get()
+                .addOnSuccessListener { document ->
+                    username = document.getString("username") ?: "Alex"
+                    currentUserXp = document.getLong("userXP")
+                }
+                .addOnFailureListener { exception ->
+                    println("Error getting current user data: $exception")
+                }
+        }
+
+        db.collection("users")
+            .orderBy("userXP", Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { result ->
                 globalLeaderboardUsers.clear()
+                val allUsers = mutableListOf<Pair<String, Long>>()
+                totalUsers = result.size() // Get the total number of users
+
                 for (document in result) {
-                    val name = document.getString("username") ?: "Unknown" // Get "username" field
-                    val xp = document.getLong("userXP") ?: 0L // Get "userXP" field
-                    globalLeaderboardUsers.add(name to xp)
+                    val name = document.getString("username") ?: "Unknown"
+                    val xp = document.getLong("userXP") ?: 0L
+                    allUsers.add(name to xp)
+
+                    if (document.id == currentUser?.uid) {
+                        currentUserRank = allUsers.size
+                        currentUserXp = xp
+                    }
                 }
+                globalLeaderboardUsers.addAll(allUsers.take(3)) // Display top 3
             }
             .addOnFailureListener { exception ->
-                // Handle errors
                 println("Error getting leaderboard documents: $exception")
             }
     }
@@ -117,9 +139,18 @@ fun ProfileScreen(navController: NavController) {
                     TextField(
                         value = username,
                         onValueChange = { username = it },
-                        singleLine = true
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
                     )
-                    IconButton(onClick = { isEditingName = false }) {
+                    IconButton(onClick = {
+                        isEditingName = false
+                        auth.currentUser?.uid?.let { uid ->
+                            db.collection("users").document(uid)
+                                .update("username", username)
+                                .addOnSuccessListener { println("Username updated successfully!") }
+                                .addOnFailureListener { e -> println("Error updating username: $e") }
+                        }
+                    }) {
                         Icon(Icons.Default.Check, contentDescription = "Save")
                     }
                 }
@@ -132,7 +163,7 @@ fun ProfileScreen(navController: NavController) {
                 )
             }
 
-            Text("test@uwaterloo.ca", fontSize = 14.sp, color = Color.Gray)
+            Text(currentUserEmail, fontSize = 14.sp, color = Color.Gray)
             Spacer(modifier = Modifier.height(24.dp))
 
             SettingsMenu(
@@ -171,18 +202,33 @@ fun ProfileScreen(navController: NavController) {
                     }
 
                     if (selectedTab == "Global") {
-                        // Display the current user's rank (placeholder for now)
-                        // Note: If you want this to be the *actual* user's data from Firestore,
-                        // you'd need to fetch that separately based on the current user's ID.
-                        LeaderboardEntry(imageUri, "Rank #2,339", "Top 1%", "88,242 XP", "Out of 3,376,487 users")
+                        val rankText = currentUserRank?.let { "Rank #$it" } ?: "Fetching Rank..."
+                        val xpText = currentUserXp?.let { "$it XP" } ?: "Fetching XP..."
+
+                        val topPercentage = if (currentUserRank != null && totalUsers != null && totalUsers != 0) {
+                            val percentage = (currentUserRank!!.toDouble() / totalUsers!!.toDouble()) * 100
+                            "${percentage.roundToInt()}%" // You might want to format this differently for "Top N%"
+                        } else {
+                            "N/A"
+                        }
+
+                        val userCountText = totalUsers?.let { "Out of $it users" } ?: "Out of All Users"
+
+                        LeaderboardEntry(
+                            profileImageUri = imageUri,
+                            rank = rankText,
+                            top = "Top ${topPercentage}", // Use the calculated percentage here
+                            xp = xpText,
+                            userCount = userCountText // Use the dynamic total user count here
+                        )
                         Divider()
-                        // Dynamically display leaderboard rows from Firestore using the direct field access
                         if (globalLeaderboardUsers.isNotEmpty()) {
-                            globalLeaderboardUsers.forEach { (name, xp) -> // Destructure the Pair
+                            globalLeaderboardUsers.forEachIndexed { index, (name, xp) ->
                                 LeaderboardRow(
                                     icon = Icons.Default.AccountCircle,
                                     name = name,
-                                    score = xp.toString()
+                                    score = xp.toString(),
+                                    rank = index + 1
                                 )
                                 Divider()
                             }
@@ -319,7 +365,7 @@ fun LeaderboardEntry(profileImageUri: Uri?, rank: String, top: String, xp: Strin
 }
 
 @Composable
-fun LeaderboardRow(icon: ImageVector, name: String, score: String) {
+fun LeaderboardRow(icon: ImageVector, name: String, score: String, rank: Int) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -328,6 +374,7 @@ fun LeaderboardRow(icon: ImageVector, name: String, score: String) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(text = "$rank.", fontWeight = FontWeight.Bold, modifier = Modifier.width(30.dp))
             Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.width(12.dp))
             Text(name)
