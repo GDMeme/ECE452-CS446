@@ -2,11 +2,13 @@ package com.example.schedula.ui
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
+import com.google.firebase.firestore.DocumentId
 
-data class DailyGoals (
-    val id: String,
-    val description: String,
-    val xp: Int
-) {
-    var completed by mutableStateOf(false)
-}
+data class DailyGoals(
+    @DocumentId // This annotation is useful if your Firestore document ID is the goalId
+    val goalId: String = "",
+    val description: String = "",
+    val xp: Int = 0,
+    var completed: Boolean = false, // Make it mutable for UI state representation
+    val date: String = "" // Add date to link goals to a specific day
+)
