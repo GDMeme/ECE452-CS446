@@ -52,6 +52,7 @@ fun TimerScreen(navController: NavController) {
     }
 
     fun resetTimer() {
+        // When resetting, check the selected mode to set the correct time
         timeLeft = if (selectedMode == "Pomodoro") 25 * 60 else 5 * 60
     }
 
@@ -145,12 +146,17 @@ fun TimerScreen(navController: NavController) {
 
             Button(
                 onClick = {
+                    // Condition to check if XP should be awarded
+                    val shouldAwardXp = !isRunning && timeLeft == 25 * 60 && selectedMode == "Pomodoro"
+
+                    // Toggle the running state
                     isRunning = !isRunning
 
-                    if (isRunning) {
+                    // Award XP only if the condition was met
+                    if (shouldAwardXp) {
                         updateUserXP(10) { success ->
                             if (success) {
-                                Toast.makeText(context, "Gained 10 XP!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Gained 10 XP for starting a new Pomodoro!", Toast.LENGTH_SHORT).show()
                             } else {
                                 Toast.makeText(context, "Failed to update XP", Toast.LENGTH_SHORT).show()
                             }
