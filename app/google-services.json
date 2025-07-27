@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "495755701748",
-    "project_id": "com-example-schedula",
-    "storage_bucket": "com-example-schedula.firebasestorage.app"
+    "project_number": "926915442255",
+    "project_id": "schedula-7d665",
+    "storage_bucket": "schedula-7d665.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:495755701748:android:73f1835fdb61f7a10cdda1",
+        "mobilesdk_app_id": "1:926915442255:android:0575bd6a738fac18079c3a",
         "android_client_info": {
           "package_name": "com.example.schedula"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBB8ZdN6-WfNFmFM2GNLnIJ4gqbVO5FEXM"
+          "current_key": "AIzaSyAxRZF5rF8EikvhEkO7ItDoFbvEfQQEdYw"
         }
       ],
       "services": {
