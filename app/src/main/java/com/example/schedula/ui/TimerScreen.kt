@@ -1,6 +1,6 @@
-
 package com.example.schedula.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -23,6 +24,10 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import androidx.navigation.NavController
 import com.example.schedula.ui.components.BottomNavBar
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import android.util.Log
 
 @Composable
 fun TimerScreen(navController: NavController) {
@@ -37,6 +42,8 @@ fun TimerScreen(navController: NavController) {
     var taskInput by remember { mutableStateOf(TextFieldValue("")) }
     val taskList = remember { mutableStateListOf<String>() }
 
+    val context = LocalContext.current
+
     LaunchedEffect(isRunning, selectedMode) {
         while (isRunning && timeLeft > 0) {
             delay(1000L)
@@ -50,6 +57,28 @@ fun TimerScreen(navController: NavController) {
 
     val minutes = timeLeft / 60
     val seconds = timeLeft % 60
+
+    fun updateUserXP(xpDelta: Int, onComplete: ((Boolean) -> Unit)? = null) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val db = FirebaseFirestore.getInstance()
+
+        if (currentUser != null) {
+            val userRef = db.collection("users").document(currentUser.uid)
+
+            userRef.update("userXP", FieldValue.increment(xpDelta.toLong()))
+                .addOnSuccessListener {
+                    Log.d("XP_UPDATE", "Incremented XP by $xpDelta for user ${currentUser.uid}")
+                    onComplete?.invoke(true)
+                }
+                .addOnFailureListener { e ->
+                    Log.e("XP_UPDATE", "Failed to increment XP: ${e.localizedMessage}")
+                    onComplete?.invoke(false)
+                }
+        } else {
+            Log.e("XP_UPDATE", "No authenticated user.")
+            onComplete?.invoke(false)
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -115,7 +144,19 @@ fun TimerScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { isRunning = !isRunning },
+                onClick = {
+                    isRunning = !isRunning
+
+                    if (isRunning) {
+                        updateUserXP(10) { success ->
+                            if (success) {
+                                Toast.makeText(context, "Gained 10 XP!", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "Failed to update XP", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = accentPurple),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.align(Alignment.CenterHorizontally)
