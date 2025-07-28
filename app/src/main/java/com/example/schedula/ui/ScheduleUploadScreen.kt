@@ -215,10 +215,24 @@ fun ScheduleUploadScreen(
                         Toast.makeText(context, "File upload successful, generating schedule...", Toast.LENGTH_LONG).show()
                         isGeneratingSchedule = true
 
-                        // Expand uploaded fixed events weekly
                         val dedupedEntries = entries.distinctBy { Triple(it.title, it.startTime, it.date) }
-                        val expandedFixed = expandWeeklyRecurringEvents(dedupedEntries)
 
+                        // Prepare first week of May fixed events to send
+                        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+                        val firstWeekStart = sdf.parse("2025-05-01")!!
+                        val firstWeekEndCal = Calendar.getInstance().apply {
+                            time = firstWeekStart
+                            add(Calendar.DATE, 6) // 7 days total
+                        }
+                        val firstWeekEnd = firstWeekEndCal.time
+
+                        val firstWeekEvents = dedupedEntries.filter { event ->
+                            val eventDate = sdf.parse(event.date)
+                            eventDate != null && !eventDate.before(firstWeekStart) && !eventDate.after(firstWeekEnd)
+                        }
+
+                        // Expand the full fixed events range locally after response
+                        val expandedFixedFullRange = expandWeeklyRecurringEvents(dedupedEntries)
 
                         // Prepare flexibleTasks JSON array
                         val flexibleTasks = JSONArray()
@@ -230,7 +244,7 @@ fun ScheduleUploadScreen(
                         }
 
                         val payload = JSONObject().apply {
-                            put("fixedEvents", JSONArray(Json.encodeToString(dedupedEntries)))
+                            put("fixedEvents", JSONArray(Json.encodeToString(firstWeekEvents))) // only first week sent
                             put("flexibleTasks", flexibleTasks)
                         }
                         val json = JSONObject().apply {
@@ -258,8 +272,9 @@ fun ScheduleUploadScreen(
                                         val wsEvents = Json.decodeFromString<List<Event>>(cleanJson)
                                         val expandedWs = expandWeeklyRecurringEvents(wsEvents)
 
-                                        // Combine fixed + websocket expanded events
-                                        val combined = (expandedFixed + expandedWs).distinctBy { Triple(it.title, it.startTime, it.date) }
+                                        // Combine full expanded fixed events + expanded ws events
+                                        val combined = (expandedFixedFullRange + expandedWs)
+                                            .distinctBy { Triple(it.title, it.startTime, it.date) }
 
                                         scheduleViewModel.setEvents(combined)
 

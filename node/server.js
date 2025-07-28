@@ -20,31 +20,21 @@
 
     async function callGemini(fixedEvents = [], flexibleTasks = []) {
         const promptText = `
-        You are given:
+        Given the following fixed events: ${JSON.stringify(fixedEvents)},
+        and the following flexible tasks: ${JSON.stringify(flexibleTasks)},
+        generate a weekly schedule in the form of a pure JSON array (no markdown, no code block, no explanation).
         
-        - Fixed events: ${JSON.stringify(fixedEvents)}
-        - Flexible tasks: ${JSON.stringify(flexibleTasks)}
+        Each item should be an object with exactly the following keys:
+        - "day" (string: e.g., "Monday")
+        - "start" (string, 24-hour time: "HH:MM")
+        - "end" (string, 24-hour time: "HH:MM")
+        - "title" (string)
         
-        Using these, generate a weekly schedule in the form of a **JSON array only** (no markdown, no explanation, no extra text).
+        Only return events for a **single representative week** (e.g., Monday to Sunday).
         
-        Each event must be an object with **exactly** the following keys:
-        - "title": string
-        - "startTime": string (24-hour format, e.g., "09:00")
-        - "endTime": string (24-hour format, e.g., "10:30")
-        - "date": string (format: "YYYY-MM-DD")
-        
-        Return only the JSON array. No explanation. No formatting.
-        
-        Example:
-        [
-          {
-            "title": "ECE 101",
-            "startTime": "09:00",
-            "endTime": "10:30",
-            "date": "2025-05-05"
-          }
-        ]
+        Return only the JSON array and nothing else.
         `;
+        
         
 
         const response = await ai.models.generateContent({
