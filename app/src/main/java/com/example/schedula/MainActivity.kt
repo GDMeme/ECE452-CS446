@@ -10,108 +10,50 @@ import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.schedula.ui.*
 import com.example.schedula.ui.theme.SchedulaTheme
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+
 
 class MainActivity : ComponentActivity() {
+    private lateinit var dataStoreManager: DataStoreManager
+    private var startDestination = "login" // default is login page
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            SchedulaTheme {
-                SchedulaApp()
+        dataStoreManager = DataStoreManager(applicationContext)
+
+        lifecycleScope.launch {
+            OnboardingDataClass.loadFromDataStore(dataStoreManager)
+
+            val isUserSignedIn = Firebase.auth.currentUser != null
+            val questionnaireCompleted = dataStoreManager.isQuestionnaireCompleted()
+
+            startDestination = when {
+                !isUserSignedIn -> "login"
+                !questionnaireCompleted -> "lifestyleQuestionnaire" // or first questionnaire screen
+                else -> "home"
+            }
+
+            setContent {
+                SchedulaTheme {
+                    SchedulaApp(startDestination)
+                }
             }
         }
     }
 }
 
 @Composable
-fun SchedulaApp() {
-    val eventList = remember {
-        mutableStateListOf<Event>().apply {
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val dayFormat = SimpleDateFormat("EEEE", Locale.getDefault())
-            val calendar = Calendar.getInstance().apply { set(2025, Calendar.JULY, 1) }
-
-            while (calendar.get(Calendar.MONTH) == Calendar.JULY) {
-                val dateStr = dateFormat.format(calendar.time)
-                val dayName = dayFormat.format(calendar.time).uppercase()
-
-                // Static recurring events
-                when (calendar.get(Calendar.DAY_OF_WEEK)) {
-                    Calendar.MONDAY -> {
-                        add(Event("🍽️ Breakfast", "08:00", "08:30", dateStr))
-                        add(Event("💡 Study Session 1", "09:00", "10:00", dateStr))
-                        add(Event("🍱 Lunch", "12:00", "13:00", dateStr))
-                        add(Event("🍽️ Dinner", "18:00", "19:00", dateStr))
-                        add(Event("💡 Study Session 2", "20:00", "21:00", dateStr))
-                    }
-                    Calendar.TUESDAY -> {
-                        add(Event("🍽️ Breakfast", "08:00", "08:30", dateStr))
-                        add(Event("💡 Study Session 1", "09:00", "10:00", dateStr))
-                        add(Event("🍱 Lunch", "12:00", "13:00", dateStr))
-                        add(Event("🏋️ Exercise", "18:00", "19:00", dateStr))
-                        add(Event("🍽️ Dinner", "18:00", "19:00", dateStr))
-                        add(Event("🎬 Movie Night", "21:00", "22:00", dateStr))
-                        add(Event("💡 Study Session 2", "20:00", "21:00", dateStr))
-                    }
-                    Calendar.WEDNESDAY -> {
-                        add(Event("🍽️ Breakfast", "08:00", "08:30", dateStr))
-                        add(Event("💡 Study Session 1", "09:00", "10:00", dateStr))
-                        add(Event("🍱 Lunch", "12:00", "13:00", dateStr))
-                        add(Event("🏃 Exercise", "15:00", "16:00", dateStr))
-                        add(Event("💡 Study Session", "17:00", "18:00", dateStr))
-                        add(Event("🍽️ Dinner", "18:00", "19:00", dateStr))
-                        add(Event("💡 Study Session 2", "20:00", "21:00", dateStr))
-                    }
-                    Calendar.THURSDAY -> {
-                        add(Event("🍽️ Breakfast", "08:00", "08:30", dateStr))
-                        add(Event("💡 Study Session 1", "09:00", "10:00", dateStr))
-                        add(Event("🧘 Yoga", "10:00", "11:00", dateStr))
-                        add(Event("🍱 Lunch", "12:00", "13:00", dateStr))
-                        add(Event("🍽️ Dinner", "18:00", "19:00", dateStr))
-                        add(Event("💡 Study Session 2", "20:00", "21:00", dateStr))
-                    }
-                    Calendar.FRIDAY -> {
-                        add(Event("🍽️ Breakfast", "08:00", "08:30", dateStr))
-                        add(Event("💡 Study Session 1", "09:00", "10:00", dateStr))
-                        add(Event("🍱 Lunch", "12:00", "13:00", dateStr))
-                        add(Event("🎸 Guitar Practice", "14:00", "15:00", dateStr))
-                        add(Event("🍽️ Dinner", "18:00", "19:00", dateStr))
-                        add(Event("💡 Study Session 2", "20:00", "21:00", dateStr))
-                    }
-                    Calendar.SATURDAY, Calendar.SUNDAY -> {
-                        add(Event("🍽️ Breakfast", "08:00", "08:30", dateStr))
-                        add(Event("💡 Study Session 1", "09:00", "10:00", dateStr))
-                        add(Event("🍱 Lunch", "12:00", "13:00", dateStr))
-                        add(Event("🍽️ Dinner", "18:00", "19:00", dateStr))
-                        add(Event("💡 Study Session 2", "20:00", "21:00", dateStr))
-                    }
-                }
-
-                // Add course schedule from onboarding
-                OnboardingDataClass.scheduleData.forEach { item ->
-                    if (item.day.uppercase() == dayName) {
-                        add(
-                            Event(
-                                title = "${item.courseCode} @ ${item.location}",
-                                startTime = item.startTime,
-                                endTime = item.endTime,
-                                date = dateStr
-                            )
-                        )
-                    }
-                }
-
-                calendar.add(Calendar.DAY_OF_MONTH, 1)
-            }
-        }
-    }
-
+fun SchedulaApp(startDestination: String) {
     val navController = rememberNavController()
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = startDestination
     ) {
         composable("login") { LoginScreen(navController) }
         composable("signup") { SignUpScreen(navController) }
@@ -122,14 +64,11 @@ fun SchedulaApp() {
             LifestyleQuestionnaireScreen(navController, {}, {}, source)
         }
         composable("scheduleUpload") {
-            ScheduleUploadScreen(navController, eventList)
+            ScheduleUploadScreen(navController)
         }
         composable("success") { SuccessScreen(navController) }
         composable("leaderboard") { LeaderboardScreen(navController) }
         composable("timer") { TimerScreen(navController) }
-//        composable("extendedQuestionnaire") {
-//            ExtendedLifestyleScreen(navController, {})
-//        }
         composable("hobbiesQuestionnaire?source={source}", arguments = listOf(navArgument("source") {
             defaultValue = "onboarding"
         })) { backStackEntry ->
@@ -144,7 +83,7 @@ fun SchedulaApp() {
         }
         composable("home") { HomeScreen(navController) }
         composable("calendar") {
-            CalendarScreen(navController, eventList)
+            CalendarScreen(navController)
         }
         composable("questionsMenu") {
             QuestionnaireMenuScreen(navController)
@@ -152,6 +91,5 @@ fun SchedulaApp() {
         composable("profile") {
             ProfileScreen(navController = navController)
         }
-
     }
 }

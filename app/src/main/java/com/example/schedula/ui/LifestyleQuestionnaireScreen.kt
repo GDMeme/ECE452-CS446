@@ -15,8 +15,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -28,6 +28,10 @@ fun LifestyleQuestionnaireScreen(
     onNext: (LifestyleQuestionnaireAnswers) -> Unit = {},
     source: String
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val dataStoreManager = remember { DataStoreManager(context) }
+
     var bedTime by remember { mutableStateOf("11:30 PM") }
     var wakeTime by remember { mutableStateOf("7:30 AM") }
     var exerciseNum by remember { mutableIntStateOf(1) }
@@ -193,17 +197,29 @@ fun LifestyleQuestionnaireScreen(
 
         Button(
             onClick = {
+                val exerciseChoice = exerciseChoices[exerciseNum]
+
+                // Update datastore with lifestyle data
+                coroutineScope.launch {
+                    dataStoreManager.saveLifestyleData(
+                        bed = bedTime,
+                        wake = wakeTime,
+                        exercise = exerciseChoice
+                    )
+                }
+
+                // Update OnboardingDataClass with lifestyle data
                 OnboardingDataClass.updateLifestyleData(
                     bed = bedTime,
                     wake = wakeTime,
-                    exercise = exerciseChoices[exerciseNum]
+                    exercise = exerciseChoice
                 )
 
                 onNext(
                     LifestyleQuestionnaireAnswers(
                         bedTime = bedTime,
                         wakeTime = wakeTime,
-                        exerciseNum = exerciseChoices[exerciseNum]
+                        exerciseNum = exerciseChoice
                     )
                 )
                 navController.navigate("hobbiesQuestionnaire")

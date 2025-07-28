@@ -26,15 +26,18 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.example.schedula.ui.OnboardingDataClass
+import com.example.schedula.ui.DataStoreManager
+import kotlinx.coroutines.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
+import okio.ByteString
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
-import org.json.JSONArray
-import kotlinx.coroutines.*
-import okio.ByteString
 import java.util.concurrent.TimeUnit
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 
 fun convertTo24Hr(time12hr: String): String {
     return try {
@@ -47,18 +50,17 @@ fun convertTo24Hr(time12hr: String): String {
     }
 }
 
-// Helper function to send WebSocket request and handle callbacks
 fun sendScheduleRequestOverWebSocket(
     json: JSONObject,
     onResponse: (String) -> Unit,
     onError: (String) -> Unit
 ) {
     val client = OkHttpClient.Builder()
-        .readTimeout(0, TimeUnit.MILLISECONDS) // Disable timeout for WebSocket
+        .readTimeout(0, TimeUnit.MILLISECONDS)
         .build()
 
     val request = Request.Builder()
-        .url("wss://ece452-cs446-fcft.onrender.com") // WebSocket URL
+        .url("wss://ece452-cs446-fcft.onrender.com")
         .build()
 
     val listener = object : WebSocketListener() {
@@ -68,7 +70,6 @@ fun sendScheduleRequestOverWebSocket(
 
         override fun onMessage(webSocket: WebSocket, text: String) {
             onResponse(text)
-            // Close after response received (optional)
             webSocket.close(1000, "Completed")
         }
 
@@ -82,8 +83,9 @@ fun sendScheduleRequestOverWebSocket(
 }
 
 @Composable
-fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotStateList<Event>) {
+fun ScheduleUploadScreen(navController: NavController) {
     val context = LocalContext.current
+    val dataStoreManager = DataStoreManager(context)
     var htmlContent by remember { mutableStateOf<String?>(null) }
 
     fun extractFullHtmlFromMht(mhtText: String): String {
@@ -180,33 +182,38 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                     Log.d("SCHEDULE_ENTRIES", "Parsed entries: ${entries.joinToString("\n")}")
 
                     if (entries.isNotEmpty()) {
-                        eventListState.addAll(entries)
                         Toast.makeText(context, "File Upload Success", Toast.LENGTH_LONG).show()
 
-                        // Build the JSON payload for WebSocket request
-                        val fixedEvents = JSONArray().apply {
-                            put(JSONObject().apply {
-                                put("day", "Monday")
-                                put("start", "10:00")
-                                put("end", "12:00")
-                                put("title", "Math Class")
-                            })
-                            put(JSONObject().apply {
-                                put("day", "Wednesday")
-                                put("start", "14:00")
-                                put("end", "15:30")
-                                put("title", "Chemistry Lab")
-                            })
+                        // Convert entries to JSON string
+                        val jsonString = Json.encodeToString(entries)
+
+                        // Then save
+                        CoroutineScope(Dispatchers.IO).launch {
+                            dataStoreManager.saveFixedEvents(jsonString)
                         }
 
-                        val flexibleTasks = JSONArray().apply {
-                            put("Study")
-                            put("Workout")
-                            put("Read")
+                        val flexibleTasks = JSONArray()
+
+                        if (OnboardingDataClass.studyHours.isNotBlank()) {
+                            flexibleTasks.put("Study")
+                        }
+
+                        if (!OnboardingDataClass.exerciseFrequency.equals("Never", ignoreCase = true)) {
+                            flexibleTasks.put("Workout")
+                        }
+
+                        if (OnboardingDataClass.hobby.isNotBlank()) {
+                            flexibleTasks.put(OnboardingDataClass.hobby)
+                        }
+
+                        OnboardingDataClass.customRoutines.forEach { routine ->
+                            if (routine.isNotBlank()) {
+                                flexibleTasks.put(routine)
+                            }
                         }
 
                         val payload = JSONObject().apply {
-                            put("fixedEvents", fixedEvents)
+                            put("fixedEvents", JSONArray())
                             put("flexibleTasks", flexibleTasks)
                         }
 
@@ -215,14 +222,12 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                             put("payload", payload)
                         }
 
-                        // Send via WebSocket instead of HTTP POST
                         CoroutineScope(Dispatchers.Main).launch {
                             sendScheduleRequestOverWebSocket(json,
                                 onResponse = { responseText ->
                                     CoroutineScope(Dispatchers.Main).launch {
                                         println("WebSocket Response: $responseText")
                                         Toast.makeText(context, "Received schedule response", Toast.LENGTH_SHORT).show()
-                                        // TODO: Parse responseText and update your UI or eventListState if needed
                                     }
                                 },
                                 onError = { errorMsg ->
@@ -244,7 +249,7 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF0E7F4)) // match your app's background
+            .background(Color(0xFFF0E7F4))
             .padding(horizontal = 24.dp, vertical = 30.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -286,7 +291,7 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                     Text(
                         "File uploaded successfully!",
                         modifier = Modifier.padding(16.dp),
-                        color = Color(0xFF4CAF50) // green for success
+                        color = Color(0xFF4CAF50)
                     )
                 } ?: Text(
                     "No file selected yet",

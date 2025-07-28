@@ -12,14 +12,23 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 @Composable
 fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}, source: String) {
+    val context = LocalContext.current
+    val dataStoreManager = remember { DataStoreManager(context) }
+
     val backgroundColor = Color(0xFFFAF7FC)
     val hobbies = listOf(
         "Reading", "Playing Sports", "Cooking", "Traveling",
@@ -93,7 +102,15 @@ fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}, 
 
         Button(
             onClick = {
-                OnboardingDataClass.updateHobbiesSelection(selected)
+                val selectedHobbies = selected.filter { it.value }.keys.toList()
+                OnboardingDataClass.updateHobbiesSelection(selectedHobbies)
+
+                // Save to DataStore in coroutine
+                CoroutineScope(Dispatchers.IO).launch {
+                    val json = Json.encodeToString(selectedHobbies)
+                    dataStoreManager.saveHobbiesSelection(json)
+                }
+
                 navController.navigate("customRoutineQuestionnaire")
             },
             modifier = Modifier
@@ -104,6 +121,7 @@ fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}, 
         ) {
             Text("Next", fontSize = 18.sp)
         }
+
     }
 }
 

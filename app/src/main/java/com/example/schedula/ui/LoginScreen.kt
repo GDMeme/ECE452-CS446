@@ -2,16 +2,20 @@ package com.example.schedula.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
@@ -28,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.sp
 import com.example.schedula.AuthenticationRepo
+import kotlinx.coroutines.launch
 import com.example.schedula.R
 import androidx.compose.foundation.Image
 import androidx.compose.ui.draw.alpha
@@ -37,11 +42,9 @@ fun LoginScreen(navController: NavController) {
     var email by remember { mutableStateOf(TextFieldValue("")) }
     var password by remember { mutableStateOf(TextFieldValue("")) }
     var pwVisible by remember { mutableStateOf(false) }
-    var context = LocalContext.current
+    val context = LocalContext.current
     val backgroundColor = Color(0xFFFAF7FC)
-
-    //need to figure out how todo all the validation checking
-    //ex: email must have @uwaterloo.ca & password should have a minimum length
+    val coroutineScope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
@@ -114,16 +117,11 @@ fun LoginScreen(navController: NavController) {
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Password") },
-                visualTransformation = if(pwVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (pwVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    val icon = if (pwVisible) {
-                            Icons.Filled.VisibilityOff
-                        }
-                        else {
-                            Icons.Default.Visibility
-                        }
+                    val icon = if (pwVisible) Icons.Filled.VisibilityOff else Icons.Default.Visibility
                     val description = if (pwVisible) "Hide password" else "Show password"
-                    IconButton(onClick = {pwVisible = !pwVisible}) {
+                    IconButton(onClick = { pwVisible = !pwVisible }) {
                         Icon(imageVector = icon, contentDescription = description)
                     }
                 },
@@ -157,20 +155,31 @@ fun LoginScreen(navController: NavController) {
 
             Button(
                 onClick = {
-                    val email = email.text.trim() //do I need to keep the .trim() here?
-                    val passwrd = password.text //do I need a .trim() here?
+                    val trimmedEmail = email.text.trim()
+                    val trimmedPassword = password.text.trim()
 
-                    if (email.isNotBlank() && passwrd.isNotBlank()) {
-                        //call authentication here
-                        AuthenticationRepo.login(email, passwrd ) { success, error ->
-                            if(success) {
-                                navController.navigate("lifestyleQuestionnaire")
-                            }
-                            else {
+                    if (trimmedEmail.isNotBlank() && trimmedPassword.isNotBlank()) {
+                        AuthenticationRepo.login(trimmedEmail, trimmedPassword) { success, error ->
+                            if (success) {
+                                coroutineScope.launch {
+                                    val dataStoreManager = DataStoreManager(context)
+                                    val hasSchedule = dataStoreManager.hasExistingSchedule()
+                                    if (hasSchedule) {
+                                        navController.navigate("calendarScreen") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                    } else {
+                                        navController.navigate("lifestyleQuestionnaire") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                    }
+                                }
+                            } else {
                                 Toast.makeText(context, error ?: "Login failed", Toast.LENGTH_LONG).show()
                             }
                         }
-
+                    } else {
+                        Toast.makeText(context, "Please enter email and password", Toast.LENGTH_SHORT).show()
                     }
                 },
                 shape = RoundedCornerShape(16.dp),

@@ -11,12 +11,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
 
 @Composable
 fun CustomRoutineScreen(
@@ -28,6 +30,10 @@ fun CustomRoutineScreen(
     val routines = remember { List(4) { mutableStateOf("") } }
     val selected = remember { mutableStateMapOf<String, Boolean>() }
 
+    val context = LocalContext.current
+    val dataStoreManager = remember { DataStoreManager(context) }
+    val coroutineScope = rememberCoroutineScope()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -35,7 +41,6 @@ fun CustomRoutineScreen(
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        // Top bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -91,7 +96,18 @@ fun CustomRoutineScreen(
 
         Button(
             onClick = {
-                OnboardingDataClass.updateHobbiesSelection(selected)
+                val nonEmptyRoutines = routines.map { it.value }.filter { it.isNotBlank() }
+
+                // Update datastore and OnboardingDataClass
+                coroutineScope.launch {
+                    dataStoreManager.saveCustomRoutines(nonEmptyRoutines)
+
+                    OnboardingDataClass.customRoutines.clear()
+                    OnboardingDataClass.customRoutines.addAll(List(4) { nonEmptyRoutines.getOrNull(it) ?: "" })
+
+                    // Mark questionnaire complete here
+                    dataStoreManager.setQuestionnaireCompleted(true)
+                }
                 onNext()
                 navController.navigate("scheduleUpload")
             },
