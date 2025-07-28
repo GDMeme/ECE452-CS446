@@ -234,7 +234,10 @@ fun ScheduleUploadScreen(
                         val flexibleTasks = JSONArray()
                         if (OnboardingDataClass.studyHours.isNotBlank()) flexibleTasks.put("Study")
                         if (!OnboardingDataClass.exerciseFrequency.equals("Never", ignoreCase = true)) flexibleTasks.put("Workout")
-                        if (OnboardingDataClass.hobbiesSelected.size != 0) flexibleTasks.put(OnboardingDataClass.hobbiesSelected)
+                        if (OnboardingDataClass.hobbiesSelected.isNotEmpty()) {
+                            val jsonArray = JSONArray(OnboardingDataClass.hobbiesSelected)
+                            flexibleTasks.put(jsonArray)
+                        }
                         OnboardingDataClass.customRoutines.forEach { routine ->
                             if (routine.isNotBlank()) flexibleTasks.put(routine)
                         }
@@ -303,7 +306,7 @@ fun ScheduleUploadScreen(
     Scaffold(
         containerColor = Color.White,
         bottomBar = {
-            if (htmlContent != null) {
+            if (htmlContent != null || hasUploadedBefore) {
                 Box(
                     Modifier
                         .background(Color.White)
@@ -316,7 +319,7 @@ fun ScheduleUploadScreen(
                                 popUpTo("scheduleUpload") { inclusive = true }
                             }
                         },
-                        enabled = (!isGeneratingSchedule && scheduleViewModel.events.isNotEmpty()) || hasUploadedBefore,
+                        enabled = ((!isGeneratingSchedule && scheduleViewModel.events.isNotEmpty())) || hasUploadedBefore,
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier
                             .fillMaxWidth()
