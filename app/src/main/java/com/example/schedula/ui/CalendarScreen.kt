@@ -11,8 +11,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,7 +29,6 @@ import com.example.schedula.ui.components.AddEventDialog
 import com.example.schedula.ui.components.BottomNavBar
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
 
 data class Event(
     val title: String,
@@ -47,11 +49,19 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
     var selectedView by remember { mutableStateOf("Week") }
     var selectedEvent by remember { mutableStateOf<Event?>(null) }
 
+    var currentMonth by remember { mutableStateOf(Calendar.getInstance().get(Calendar.MONTH)) }
+    var currentYear by remember { mutableStateOf(Calendar.getInstance().get(Calendar.YEAR)) }
+
+    val calendarHeader = Calendar.getInstance().apply {
+        set(Calendar.YEAR, currentYear)
+        set(Calendar.MONTH, currentMonth)
+    }
+    val monthYearFormatter = remember { SimpleDateFormat("MMMM yyyy", Locale.getDefault()) }
+
+    val deduplicatedEvents = eventList.distinctBy { Triple(it.title, it.startTime, it.date) }
     val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     val currentMinute = Calendar.getInstance().get(Calendar.MINUTE)
     val isToday = selectedDate == todayDate
-
-    val deduplicatedEvents = eventList.distinctBy { Triple(it.title, it.startTime, it.date) }
 
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -67,44 +77,40 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
 
     if (selectedEvent != null) {
         AlertDialog(
-                onDismissRequest = { selectedEvent = null },
-                confirmButton = {
-                    Button(onClick = { selectedEvent = null },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = purple,
-                            contentColor = Color.White
-                        )) {
-                        Text("Close")
-                    }
-                },
-                title = {
-                    Text(selectedEvent!!.title)
-                },
-                text = {
-                    Column {
-                        Text("Start: ${selectedEvent!!.startTime}")
-                        Text("End: ${selectedEvent!!.endTime}")
-                        Text("Date: ${selectedEvent!!.date}")
-
-                        if (selectedEvent!!.title.contains("study", ignoreCase = true)) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = "Open Timer",
-                                modifier = Modifier
-                                    .align(Alignment.CenterHorizontally)
-                                    .clickable {
-                                        selectedEvent = null
-                                        navController.navigate("timer")
-                                    },
-                                color = purple,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
+            onDismissRequest = { selectedEvent = null },
+            confirmButton = {
+                Button(onClick = { selectedEvent = null },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = purple,
+                        contentColor = Color.White
+                    )) {
+                    Text("Close")
+                }
+            },
+            title = { Text(selectedEvent!!.title) },
+            text = {
+                Column {
+                    Text("Start: ${selectedEvent!!.startTime}")
+                    Text("End: ${selectedEvent!!.endTime}")
+                    Text("Date: ${selectedEvent!!.date}")
+                    if (selectedEvent!!.title.contains("study", ignoreCase = true)) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Open Timer",
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .clickable {
+                                    selectedEvent = null
+                                    navController.navigate("timer")
+                                },
+                            color = purple,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
+            }
         )
-
     }
 
     Scaffold(
@@ -125,13 +131,44 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
                 .background(backgroundColor)
                 .padding(padding)
         ) {
-            Text(
-                "July 2025",
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-            )
+            // Month-Year Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                IconButton(onClick = {
+                    if (currentMonth == 0) {
+                        currentMonth = 11
+                        currentYear -= 1
+                    } else {
+                        currentMonth -= 1
+                    }
+                }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Previous Month")
+                }
 
+                Text(
+                    text = monthYearFormatter.format(calendarHeader.time),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp,
+                )
+
+                IconButton(onClick = {
+                    if (currentMonth == 11) {
+                        currentMonth = 0
+                        currentYear += 1
+                    } else {
+                        currentMonth += 1
+                    }
+                }) {
+                    Icon(Icons.Default.ArrowForward, contentDescription = "Next Month")
+                }
+            }
+
+            // View Toggles
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -157,9 +194,14 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
 
             if (selectedView == "Month") {
                 val daysOfWeek = listOf("S", "M", "T", "W", "Th", "F", "S")
-                val startDayRaw = Calendar.getInstance().apply { set(2025, Calendar.JULY, 1) }.get(Calendar.DAY_OF_WEEK)
+                val calendar = Calendar.getInstance().apply {
+                    set(Calendar.YEAR, currentYear)
+                    set(Calendar.MONTH, currentMonth)
+                    set(Calendar.DAY_OF_MONTH, 1)
+                }
+                val startDayRaw = calendar.get(Calendar.DAY_OF_WEEK)
                 val startDay = (startDayRaw - 1 + 7) % 7
-                val totalDays = 31
+                val totalDays = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
 
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -185,7 +227,10 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
                     calendarRows.forEach { week ->
                         Row(Modifier.fillMaxWidth()) {
                             week.forEach { day ->
-                                val dateStr = if (day != null) "2025-07-${"%02d".format(day)}" else ""
+                                val dateStr = if (day != null) {
+                                    String.format("%04d-%02d-%02d", currentYear, currentMonth + 1, day)
+                                } else ""
+
                                 val isSelected = selectedDate == dateStr
                                 val hasEvent = deduplicatedEvents.any { it.date == dateStr }
 
@@ -226,7 +271,9 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
 
             if (selectedView == "Week") {
                 val days = (1..31).map { day ->
-                    val cal = Calendar.getInstance().apply { set(2025, Calendar.JULY, day) }
+                    val cal = Calendar.getInstance().apply {
+                        set(currentYear, currentMonth, day)
+                    }
                     val df = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                     val label = cal.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.SHORT, Locale.getDefault())
                     Triple(label ?: "", day, df.format(cal.time))
@@ -235,7 +282,7 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
                 val lazyListState = rememberLazyListState()
                 val todayIndex = days.indexOfFirst { it.third == todayDate }
 
-                LaunchedEffect(selectedView) {
+                LaunchedEffect(selectedView, currentMonth, currentYear) {
                     if (selectedView == "Week" && todayIndex != -1) {
                         lazyListState.scrollToItem(todayIndex)
                     }
