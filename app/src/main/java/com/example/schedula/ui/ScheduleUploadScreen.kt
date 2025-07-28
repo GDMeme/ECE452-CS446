@@ -216,7 +216,9 @@ fun ScheduleUploadScreen(
                         isGeneratingSchedule = true
 
                         // Expand uploaded fixed events weekly
-                        val expandedFixed = expandWeeklyRecurringEvents(entries)
+                        val dedupedEntries = entries.distinctBy { Triple(it.title, it.startTime, it.date) }
+                        val expandedFixed = expandWeeklyRecurringEvents(dedupedEntries)
+
 
                         // Prepare flexibleTasks JSON array
                         val flexibleTasks = JSONArray()
@@ -228,7 +230,7 @@ fun ScheduleUploadScreen(
                         }
 
                         val payload = JSONObject().apply {
-                            put("fixedEvents", JSONArray(Json.encodeToString(entries)))
+                            put("fixedEvents", JSONArray(Json.encodeToString(dedupedEntries)))
                             put("flexibleTasks", flexibleTasks)
                         }
                         val json = JSONObject().apply {
@@ -285,6 +287,8 @@ fun ScheduleUploadScreen(
         }
     )
 
+    val hasUploadedBefore = OnboardingDataClass.fixedEvents.isNotEmpty()
+
     Scaffold(
         containerColor = Color.White,
         bottomBar = {
@@ -301,11 +305,12 @@ fun ScheduleUploadScreen(
                                 popUpTo("scheduleUpload") { inclusive = true }
                             }
                         },
-                        enabled = !isGeneratingSchedule && scheduleViewModel.events.isNotEmpty(),
+                        enabled = (!isGeneratingSchedule && scheduleViewModel.events.isNotEmpty()) || hasUploadedBefore,
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+                            .height(48.dp)
+                            .padding(bottom = 24.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C89B8))
                     ) {
                         Text("Next", color = Color.White)
