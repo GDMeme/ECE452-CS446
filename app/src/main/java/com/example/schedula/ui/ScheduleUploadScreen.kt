@@ -37,6 +37,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.navigationBarsPadding
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -206,7 +207,7 @@ fun ScheduleUploadScreen(
                             continue
                         }
                     }
-                    
+
                     Log.d("SCHEDULE_ENTRIES", "Parsed entries: ${entries.joinToString("\n")}")
 
                     if (entries.isNotEmpty()) {
@@ -285,7 +286,33 @@ fun ScheduleUploadScreen(
     )
 
     Scaffold(
-        containerColor = Color.White
+        containerColor = Color.White,
+        bottomBar = {
+            if (htmlContent != null) {
+                Box(
+                    Modifier
+                        .background(Color.White)
+                        .padding(horizontal = 24.dp, vertical = 16.dp)
+                        .navigationBarsPadding()
+                ) {
+                    Button(
+                        onClick = {
+                            navController.navigate("calendar") {
+                                popUpTo("scheduleUpload") { inclusive = true }
+                            }
+                        },
+                        enabled = !isGeneratingSchedule && scheduleViewModel.events.isNotEmpty(),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C89B8))
+                    ) {
+                        Text("Next", color = Color.White)
+                    }
+                }
+            }
+        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -352,26 +379,22 @@ fun ScheduleUploadScreen(
                 style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray)
             )
 
-            Spacer(Modifier.weight(1f)) // Push next button down
-
-            if (htmlContent != null) {
-                Button(
-                    onClick = {
-                        navController.navigate("calendar") {
-                            popUpTo("scheduleUpload") { inclusive = true }
-                        }
-                    },
-                    enabled = !isGeneratingSchedule && scheduleViewModel.events.isNotEmpty(),
-                    shape = RoundedCornerShape(16.dp),
+            if (isGeneratingSchedule) {
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    "Generating schedule, please wait...",
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    color = Color(0xFF9C89B8),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                LinearProgressIndicator(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
-                        .padding(bottom = 24.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C89B8))
-                ) {
-                    Text("Next", color = Color.White)
-                }
+                        .padding(vertical = 8.dp)
+                )
             }
+
+            Spacer(Modifier.weight(1f)) // Push content up so bottomBar does not overlap
         }
     }
 }
