@@ -24,18 +24,16 @@
         and the following flexible tasks: ${JSON.stringify(flexibleTasks)},
         generate a weekly schedule in the form of a pure JSON array (no markdown, no code block, no explanation).
         
-        Each item should be an object with exactly the following keys:
-        - "day" (string: e.g., "Monday")
-        - "start" (string, 24-hour time: "HH:MM")
-        - "end" (string, 24-hour time: "HH:MM")
-        - "title" (string)
+        Each event must be an object with **exactly** the following keys:
+        - "title": string
+        - "startTime": string (24-hour format, e.g., "09:00")
+        - "endTime": string (24-hour format, e.g., "10:30")
+        - "date": string (format: "YYYY-MM-DD")
         
         Only return events for a **single representative week** (e.g., Monday to Sunday).
         
         Return only the JSON array and nothing else.
         `;
-        
-        
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
