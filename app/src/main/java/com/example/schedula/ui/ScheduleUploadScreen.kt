@@ -3,8 +3,6 @@ package com.example.schedula.ui
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
-import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -38,6 +36,7 @@ import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
+import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,16 +48,16 @@ fun ScheduleUploadScreen(
     var htmlContent by remember { mutableStateOf<String?>(null) }
     var isGeneratingSchedule by remember { mutableStateOf(false) }
 
-fun convertTo24Hr(time12hr: String): String {
-    return try {
-        val sdf12 = SimpleDateFormat("hh:mma", Locale.US)
-        val sdf24 = SimpleDateFormat("HH:mm", Locale.US)
-        sdf24.format(sdf12.parse(time12hr.replace(" ", "").uppercase(Locale.US))!!)
-    } catch (e: Exception) {
-        Log.e("TimeParse", "Failed to parse time: $time12hr", e)
-        time12hr
+    fun convertTo24Hr(time12hr: String): String {
+        return try {
+            val sdf12 = SimpleDateFormat("hh:mma", Locale.US)
+            val sdf24 = SimpleDateFormat("HH:mm", Locale.US)
+            sdf24.format(sdf12.parse(time12hr.replace(" ", "").uppercase(Locale.US))!!)
+        } catch (e: Exception) {
+            Log.e("TimeParse", "Failed to parse time: $time12hr", e)
+            time12hr
+        }
     }
-}
 
     fun expandWeeklyRecurringEvents(
         baseEvents: List<Event>,
@@ -373,9 +372,6 @@ fun convertTo24Hr(time12hr: String): String {
                     Text("Next", color = Color.White)
                 }
             }
-        }
-        
-            
         }
     }
 }
