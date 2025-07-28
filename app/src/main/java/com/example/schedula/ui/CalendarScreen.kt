@@ -1,5 +1,6 @@
 package com.example.schedula.ui
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -31,6 +32,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.serialization.Serializable
 
+@OptIn(kotlinx.serialization.InternalSerializationApi::class)
 @Serializable
 data class Event(
     val title: String,
@@ -40,12 +42,11 @@ data class Event(
 )
 
 @Composable
-fun CalendarScreen(navController: NavController) {
-    val eventList = OnboardingDataClass.fixedEvents + OnboardingDataClass.flexibleEvents
-    val backgroundColor = Color(0xFFF0E7F4)
+fun CalendarScreen(navController: NavController, scheduleViewModel: ScheduleViewModel) {
     val purple = Color(0xFF9C89B8)
     val lightPurple = Color(0xFFE6DEF6)
     val red = Color(0xFFDC143C)
+    val backgroundColor = Color(0xFFF0E7F4)
 
     val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     var selectedDate by remember { mutableStateOf(todayDate) }
@@ -61,7 +62,68 @@ fun CalendarScreen(navController: NavController) {
     }
     val monthYearFormatter = remember { SimpleDateFormat("MMMM yyyy", Locale.getDefault()) }
 
-    val deduplicatedEvents = eventList.distinctBy { Triple(it.title, it.startTime, it.date) }
+    // Define start and end dates for repeating (May 1 to August 7 inclusive)
+    val startRepeatDate = Calendar.getInstance().apply {
+        set(Calendar.YEAR, currentYear)       // Current year
+        set(Calendar.MONTH, Calendar.MAY)     // May = 4 (zero-based)
+        set(Calendar.DAY_OF_MONTH, 1)         // May 1
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+
+    val endRepeatDate = Calendar.getInstance().apply {
+        set(Calendar.YEAR, currentYear)       // Same current year
+        set(Calendar.MONTH, Calendar.AUGUST)  // August = 7 (zero-based)
+        set(Calendar.DAY_OF_MONTH, 7)         // August 7 (first week)
+        set(Calendar.HOUR_OF_DAY, 23)
+        set(Calendar.MINUTE, 59)
+        set(Calendar.SECOND, 59)
+        set(Calendar.MILLISECOND, 999)
+    }
+
+
+    val originalEvents = scheduleViewModel.events
+
+    // Function to parse date string "yyyy-MM-dd" to Calendar
+    fun parseDate(dateStr: String): Calendar? {
+        return try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val date = sdf.parse(dateStr)
+            Calendar.getInstance().apply { time = date!! }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // Generate repeated weekly events within range
+    val repeatedEvents = remember(originalEvents, startRepeatDate.time, endRepeatDate.time) {
+        val result = mutableListOf<Event>()
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+        for (event in originalEvents) {
+            val originalDateCal = parseDate(event.date) ?: continue
+            var currentRepeatDate = Calendar.getInstance().apply { time = originalDateCal.time }
+
+            // Move currentRepeatDate forward to the startRepeatDate or beyond
+            while (currentRepeatDate.before(startRepeatDate)) {
+                currentRepeatDate.add(Calendar.DATE, 7)
+            }
+
+            // Add weekly events until after endRepeatDate
+            while (!currentRepeatDate.after(endRepeatDate)) {
+                // Create new event with repeated date
+                val newEvent = event.copy(date = sdf.format(currentRepeatDate.time))
+                result.add(newEvent)
+
+                currentRepeatDate.add(Calendar.DATE, 7)
+            }
+        }
+        result
+    }
+
+    val deduplicatedEvents = repeatedEvents.distinctBy { Triple(it.title, it.startTime, it.date) }
     val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     val currentMinute = Calendar.getInstance().get(Calendar.MINUTE)
     val isToday = selectedDate == todayDate
@@ -72,7 +134,7 @@ fun CalendarScreen(navController: NavController) {
         AddEventDialog(
             onDismiss = { showAddDialog = false },
             onSave = { data ->
-                // Just add to flexible events, I think this is fine
+                // Just add to flexible events, this is fine
                 OnboardingDataClass.flexibleEvents.add(Event(data.title, data.startTime, data.endTime, data.date))
                 selectedDate = data.date
             }

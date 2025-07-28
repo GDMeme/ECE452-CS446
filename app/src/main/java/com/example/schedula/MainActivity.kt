@@ -16,11 +16,17 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import androidx.activity.viewModels
+import androidx.lifecycle.ViewModelProvider
+import com.example.schedula.ui.ScheduleViewModel
 
 
 class MainActivity : ComponentActivity() {
     private lateinit var dataStoreManager: DataStoreManager
     private var startDestination = "login" // default is login page
+
+    // Create a single ViewModel instance for the activity
+    private val scheduleViewModel: ScheduleViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,7 +46,7 @@ class MainActivity : ComponentActivity() {
 
             setContent {
                 SchedulaTheme {
-                    SchedulaApp(startDestination)
+                    SchedulaApp(startDestination, scheduleViewModel)
                 }
             }
         }
@@ -48,7 +54,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun SchedulaApp(startDestination: String) {
+fun SchedulaApp(startDestination: String, scheduleViewModel: ScheduleViewModel) {
     val navController = rememberNavController()
 
     NavHost(
@@ -64,18 +70,18 @@ fun SchedulaApp(startDestination: String) {
             LifestyleQuestionnaireScreen(navController, {}, {}, source)
         }
         composable("scheduleUpload") {
-            ScheduleUploadScreen(navController)
+            ScheduleUploadScreen(navController, scheduleViewModel)
         }
         composable("success") { SuccessScreen(navController) }
         composable("leaderboard") { LeaderboardScreen(navController) }
         composable("timer") { TimerScreen(navController) }
-        composable("hobbiesQuestionnaire?source={source}", arguments = listOf(navArgument("source") {
+        composable(route = "hobbiesQuestionnaire?source={source}", arguments = listOf(navArgument("source") {
             defaultValue = "onboarding"
         })) { backStackEntry ->
             val source = backStackEntry.arguments?.getString("source") ?: "onboarding"
             HobbySelectionScreen(navController, {}, source)
         }
-        composable("customRoutineQuestionnaire?source={source}", arguments = listOf(navArgument("source") {
+        composable(route = "customRoutineQuestionnaire?source={source}", arguments = listOf(navArgument("source") {
             defaultValue = "onboarding"
         })) { backStackEntry ->
             val source = backStackEntry.arguments?.getString("source") ?: "onboarding"
@@ -83,7 +89,7 @@ fun SchedulaApp(startDestination: String) {
         }
         composable("home") { HomeScreen(navController) }
         composable("calendar") {
-            CalendarScreen(navController)
+            CalendarScreen(navController, scheduleViewModel)
         }
         composable("questionsMenu") {
             QuestionnaireMenuScreen(navController)

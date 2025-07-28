@@ -1,8 +1,8 @@
 package com.example.schedula.ui
 
 import android.net.Uri
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -15,82 +15,109 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.navigation.NavController
-import android.util.Log
-import android.widget.Toast
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.*
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import okhttp3.*
+import okhttp3.RequestBody.Companion.toRequestBody
+import okio.ByteString
+import org.json.JSONArray
+import org.json.JSONObject
 import org.jsoup.Jsoup
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.example.schedula.ui.OnboardingDataClass
-import com.example.schedula.ui.DataStoreManager
-import kotlinx.coroutines.*
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody.Companion.toRequestBody
-import okio.ByteString
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.IOException
 import java.util.concurrent.TimeUnit
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
-
-fun convertTo24Hr(time12hr: String): String {
-    return try {
-        val sdf12 = SimpleDateFormat("hh:mma", Locale.US)
-        val sdf24 = SimpleDateFormat("HH:mm", Locale.US)
-        sdf24.format(sdf12.parse(time12hr.replace(" ", "").uppercase(Locale.US))!!)
-    } catch (e: Exception) {
-        Log.e("TimeParse", "Failed to parse time: $time12hr", e)
-        time12hr
-    }
-}
-
-fun sendScheduleRequestOverWebSocket(
-    json: JSONObject,
-    onResponse: (String) -> Unit,
-    onError: (String) -> Unit
-) {
-    val client = OkHttpClient.Builder()
-        .readTimeout(0, TimeUnit.MILLISECONDS)
-        .build()
-
-    val request = Request.Builder()
-        .url("wss://ece452-cs446-fcft.onrender.com")
-        .build()
-
-    val listener = object : WebSocketListener() {
-        override fun onOpen(webSocket: WebSocket, response: Response) {
-            webSocket.send(json.toString())
-        }
-
-        override fun onMessage(webSocket: WebSocket, text: String) {
-            onResponse(text)
-            webSocket.close(1000, "Completed")
-        }
-
-        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            onError(t.message ?: "Unknown error")
-        }
-    }
-
-    client.newWebSocket(request, listener)
-    client.dispatcher.executorService.shutdown()
-}
 
 @Composable
-fun ScheduleUploadScreen(navController: NavController) {
+fun ScheduleUploadScreen(
+    navController: androidx.navigation.NavController,
+    scheduleViewModel: ScheduleViewModel = viewModel()
+) {
     val context = LocalContext.current
-    val dataStoreManager = DataStoreManager(context)
     var htmlContent by remember { mutableStateOf<String?>(null) }
+    var isGeneratingSchedule by remember { mutableStateOf(false) }
 
-    fun extractFullHtmlFromMht(mhtText: String): String {
-        val htmlParts = Regex("(?si)(<html.*?</html>)").findAll(mhtText).map { it.value }.toList()
-        return if (htmlParts.isNotEmpty()) htmlParts.joinToString("<hr/>") else "No HTML content found."
+    fun convertTo24Hr(time12hr: String): String {
+        return try {
+            val sdf12 = SimpleDateFormat("hh:mma", Locale.US)
+            val sdf24 = SimpleDateFormat("HH:mm", Locale.US)
+            sdf24.format(sdf12.parse(time12hr.replace(" ", "").uppercase(Locale.US))!!)
+        } catch (e: Exception) {
+            Log.e("TimeParse", "Failed to parse time: $time12hr", e)
+            time12hr
+        }
+    }
+
+    fun expandWeeklyRecurringEvents(
+        baseEvents: List<Event>,
+        startDateStr: String = "2025-05-01",
+        endDateStr: String = "2025-08-07"
+    ): List<Event> {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val startDate = sdf.parse(startDateStr) ?: return emptyList()
+        val endDate = sdf.parse(endDateStr) ?: return emptyList()
+
+        val expandedEvents = mutableListOf<Event>()
+
+        fun getDayOfWeekFromDate(dateStr: String): Int {
+            val date = sdf.parse(dateStr) ?: return Calendar.MONDAY
+            val cal = Calendar.getInstance()
+            cal.time = date
+            return cal.get(Calendar.DAY_OF_WEEK)
+        }
+
+        baseEvents.forEach { event ->
+            val eventDayOfWeek = getDayOfWeekFromDate(event.date)
+            val weeklyCal = Calendar.getInstance().apply { time = startDate }
+
+            while (weeklyCal.get(Calendar.DAY_OF_WEEK) != eventDayOfWeek) {
+                weeklyCal.add(Calendar.DATE, 1)
+            }
+
+            while (!weeklyCal.time.after(endDate)) {
+                val dateStr = sdf.format(weeklyCal.time)
+                expandedEvents.add(event.copy(date = dateStr))
+                weeklyCal.add(Calendar.DATE, 7)
+            }
+        }
+
+        return expandedEvents
+    }
+
+    fun sendScheduleRequestOverWebSocket(
+        json: JSONObject,
+        onResponse: (String) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val client = OkHttpClient.Builder()
+            .readTimeout(0, TimeUnit.MILLISECONDS)
+            .build()
+
+        val request = Request.Builder()
+            .url("wss://ece452-cs446-fcft.onrender.com")
+            .build()
+
+        val listener = object : WebSocketListener() {
+            override fun onOpen(webSocket: WebSocket, response: Response) {
+                webSocket.send(json.toString())
+            }
+
+            override fun onMessage(webSocket: WebSocket, text: String) {
+                onResponse(text)
+                webSocket.close(1000, "Completed")
+            }
+
+            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                onError(t.message ?: "Unknown error")
+            }
+        }
+
+        client.newWebSocket(request, listener)
+        client.dispatcher.executorService.shutdown()
     }
 
     val launcher = rememberLauncherForActivityResult(
@@ -99,11 +126,7 @@ fun ScheduleUploadScreen(navController: NavController) {
             uri?.let {
                 context.contentResolver.openInputStream(uri)?.use { stream ->
                     val text = BufferedReader(InputStreamReader(stream)).readText()
-                    val extractedHtml = extractFullHtmlFromMht(text)
-                    htmlContent = extractedHtml
-                    Log.d("MHT_VIEWER", "Extracted HTML content")
-
-                    val doc = Jsoup.parse(extractedHtml)
+                    val doc = Jsoup.parse(text)
                     val rows = doc.select("tr")
                     val entries = mutableListOf<Event>()
                     var currentCourse: String? = null
@@ -135,10 +158,7 @@ fun ScheduleUploadScreen(navController: NavController) {
                             val end24 = convertTo24Hr(match.groupValues[3])
 
                             val rangeParts = dateRange.split(" - ")
-                            if (rangeParts.size != 2) {
-                                Log.e("SCHEDULE_PARSE", "Skipping row with malformed dateRange: $dateRange")
-                                continue
-                            }
+                            if (rangeParts.size != 2) continue
 
                             val (startStr, endStr) = rangeParts
                             val sdf = SimpleDateFormat("MM/dd/yyyy", Locale.US)
@@ -154,23 +174,27 @@ fun ScheduleUploadScreen(navController: NavController) {
                             )
 
                             val windowStart = Calendar.getInstance().apply {
-                                set(2025, Calendar.JULY, 7, 0, 0, 0)
+                                set(2025, Calendar.MAY, 1, 0, 0, 0)
                             }
                             val windowEnd = Calendar.getInstance().apply {
-                                set(2025, Calendar.JULY, 11, 23, 59, 59)
+                                set(2025, Calendar.AUGUST, 7, 23, 59, 59)
                             }
 
                             for (d in days) {
                                 val dayCode = dayMap[d] ?: continue
                                 val cal = Calendar.getInstance()
                                 cal.time = windowStart.time
-                                while (!cal.after(windowEnd)) {
-                                    if (cal.get(Calendar.DAY_OF_WEEK) == dayCode) {
-                                        val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(cal.time)
-                                        entries.add(Event("$currentCourse $component", start24, end24, dateStr))
-                                        break
-                                    }
+
+                                // Advance to the first occurrence of this weekday
+                                while (cal.get(Calendar.DAY_OF_WEEK) != dayCode) {
                                     cal.add(Calendar.DATE, 1)
+                                }
+
+                                // Add weekly recurring entries until end of window
+                                while (!cal.after(windowEnd)) {
+                                    val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(cal.time)
+                                    entries.add(Event("$currentCourse $component", start24, end24, dateStr))
+                                    cal.add(Calendar.DATE, 7)
                                 }
                             }
                         } catch (e: Exception) {
@@ -179,65 +203,73 @@ fun ScheduleUploadScreen(navController: NavController) {
                         }
                     }
 
-                    Log.d("SCHEDULE_ENTRIES", "Parsed entries: ${entries.joinToString("\n")}")
-
                     if (entries.isNotEmpty()) {
-                        Toast.makeText(context, "File Upload Success", Toast.LENGTH_LONG).show()
+                        htmlContent = "Uploaded"
+                        Toast.makeText(context, "File upload successful, generating schedule...", Toast.LENGTH_LONG).show()
+                        isGeneratingSchedule = true
 
-                        // Convert entries to JSON string
-                        val jsonString = Json.encodeToString(entries)
+                        // Expand uploaded fixed events weekly
+                        val expandedFixed = expandWeeklyRecurringEvents(entries)
 
-                        // Then save
-                        CoroutineScope(Dispatchers.IO).launch {
-                            dataStoreManager.saveFixedEvents(jsonString)
-                        }
-
+                        // Prepare flexibleTasks JSON array
                         val flexibleTasks = JSONArray()
-
-                        if (OnboardingDataClass.studyHours.isNotBlank()) {
-                            flexibleTasks.put("Study")
-                        }
-
-                        if (!OnboardingDataClass.exerciseFrequency.equals("Never", ignoreCase = true)) {
-                            flexibleTasks.put("Workout")
-                        }
-
-                        if (OnboardingDataClass.hobby.isNotBlank()) {
-                            flexibleTasks.put(OnboardingDataClass.hobby)
-                        }
-
+                        if (OnboardingDataClass.studyHours.isNotBlank()) flexibleTasks.put("Study")
+                        if (!OnboardingDataClass.exerciseFrequency.equals("Never", ignoreCase = true)) flexibleTasks.put("Workout")
+                        if (OnboardingDataClass.hobby.isNotBlank()) flexibleTasks.put(OnboardingDataClass.hobby)
                         OnboardingDataClass.customRoutines.forEach { routine ->
-                            if (routine.isNotBlank()) {
-                                flexibleTasks.put(routine)
-                            }
+                            if (routine.isNotBlank()) flexibleTasks.put(routine)
                         }
 
                         val payload = JSONObject().apply {
-                            put("fixedEvents", JSONArray())
+                            put("fixedEvents", JSONArray(Json.encodeToString(entries)))
                             put("flexibleTasks", flexibleTasks)
                         }
-
                         val json = JSONObject().apply {
                             put("type", "generate-schedule")
                             put("payload", payload)
                         }
 
-                        CoroutineScope(Dispatchers.Main).launch {
-                            sendScheduleRequestOverWebSocket(json,
-                                onResponse = { responseText ->
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        println("WebSocket Response: $responseText")
-                                        Toast.makeText(context, "Received schedule response", Toast.LENGTH_SHORT).show()
-                                    }
-                                },
-                                onError = { errorMsg ->
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        println("WebSocket error: $errorMsg")
-                                        Toast.makeText(context, "WebSocket error: $errorMsg", Toast.LENGTH_SHORT).show()
+                        sendScheduleRequestOverWebSocket(
+                            json,
+                            onResponse = { responseText ->
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    try {
+                                        Log.d("responseText: ", responseText)
+
+                                        val jsonObject = JSONObject(responseText)
+                                        val rawPayload = jsonObject.getString("payload")
+
+                                        // Strip code block formatting
+                                        val cleanJson = rawPayload
+                                            .removePrefix("```json")
+                                            .removePrefix("```")
+                                            .removeSuffix("```")
+                                            .trim()
+
+                                        val wsEvents = Json.decodeFromString<List<Event>>(cleanJson)
+                                        val expandedWs = expandWeeklyRecurringEvents(wsEvents)
+
+                                        // Combine fixed + websocket expanded events
+                                        val combined = (expandedFixed + expandedWs).distinctBy { Triple(it.title, it.startTime, it.date) }
+
+                                        scheduleViewModel.setEvents(combined)
+
+                                        Toast.makeText(context, "Schedule generated successfully!", Toast.LENGTH_SHORT).show()
+                                        isGeneratingSchedule = false
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Failed to parse schedule response.", Toast.LENGTH_LONG).show()
+                                        isGeneratingSchedule = false
+                                        Log.e("ScheduleUpload", "WS parse error", e)
                                     }
                                 }
-                            )
-                        }
+                            },
+                            onError = { errorMsg ->
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    Toast.makeText(context, "WebSocket error: $errorMsg", Toast.LENGTH_LONG).show()
+                                    isGeneratingSchedule = false
+                                }
+                            }
+                        )
                     } else {
                         Toast.makeText(context, "No valid schedule entries found", Toast.LENGTH_LONG).show()
                     }
@@ -257,11 +289,11 @@ fun ScheduleUploadScreen(navController: NavController) {
             bottomBar = {
                 Button(
                     onClick = {
-                        navController.navigate("success") {
+                        navController.navigate("calendar") {
                             popUpTo("scheduleUpload") { inclusive = true }
                         }
                     },
-                    enabled = htmlContent != null,
+                    enabled = !isGeneratingSchedule && scheduleViewModel.events.isNotEmpty(),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -272,7 +304,11 @@ fun ScheduleUploadScreen(navController: NavController) {
                 }
             }
         ) { padding ->
-            Column(Modifier.padding(padding).fillMaxSize()) {
+            Column(
+                Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+            ) {
                 Text(
                     "Personalize your calendar by uploading your school schedule from the UW Portal",
                     modifier = Modifier.padding(16.dp),
@@ -287,17 +323,30 @@ fun ScheduleUploadScreen(navController: NavController) {
                     Text("Select MHT File", color = Color.White)
                 }
 
-                htmlContent?.let { _ ->
+                if (htmlContent != null) {
                     Text(
                         "File uploaded successfully!",
                         modifier = Modifier.padding(16.dp),
                         color = Color(0xFF4CAF50)
                     )
-                } ?: Text(
-                    "No file selected yet",
-                    modifier = Modifier.padding(16.dp),
-                    color = Color.Gray
-                )
+                } else {
+                    Text(
+                        "No file selected yet",
+                        modifier = Modifier.padding(16.dp),
+                        color = Color.Gray
+                    )
+                }
+
+                if (isGeneratingSchedule) {
+                    Spacer(Modifier.height(20.dp))
+                    Text(
+                        "Generating schedule, please wait...",
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        color = Color(0xFF9C89B8),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
+                }
             }
         }
     }
