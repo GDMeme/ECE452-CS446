@@ -46,6 +46,9 @@ wss.on("connection", (ws) => {
         if (data.type === "generate-schedule") {
             const { fixedEvents = [], flexibleTasks = [] } = data.payload;
             
+            console.log("Fixed events: ", fixedEvents);
+            console.log("Flexible tasks: ", flexibleTasks);
+            
             if (fixedEvents.length === 0 && flexibleTasks.length === 0) {
                 ws.send(
                     JSON.stringify({ error: "0 fixed events and 0 flexible tasks found" })
