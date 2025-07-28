@@ -1,43 +1,37 @@
 package com.example.schedula.ui
 
 import android.net.Uri
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import android.util.Log
-import android.widget.Toast
+import kotlinx.coroutines.*
+import okhttp3.*
 import org.jsoup.Jsoup
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.example.schedula.ui.OnboardingDataClass
-import com.example.schedula.ui.DataStoreManager
-import kotlinx.coroutines.*
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody.Companion.toRequestBody
-import okio.ByteString
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.IOException
 import java.util.concurrent.TimeUnit
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
 
 fun convertTo24Hr(time12hr: String): String {
     return try {
@@ -55,14 +49,8 @@ fun sendScheduleRequestOverWebSocket(
     onResponse: (String) -> Unit,
     onError: (String) -> Unit
 ) {
-    val client = OkHttpClient.Builder()
-        .readTimeout(0, TimeUnit.MILLISECONDS)
-        .build()
-
-    val request = Request.Builder()
-        .url("wss://ece452-cs446-fcft.onrender.com")
-        .build()
-
+    val client = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS).build()
+    val request = Request.Builder().url("wss://ece452-cs446-fcft.onrender.com").build()
     val listener = object : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: Response) {
             webSocket.send(json.toString())
@@ -77,15 +65,14 @@ fun sendScheduleRequestOverWebSocket(
             onError(t.message ?: "Unknown error")
         }
     }
-
     client.newWebSocket(request, listener)
     client.dispatcher.executorService.shutdown()
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ScheduleUploadScreen(navController: NavController) {
+fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotStateList<Event>) {
     val context = LocalContext.current
-    val dataStoreManager = DataStoreManager(context)
     var htmlContent by remember { mutableStateOf<String?>(null) }
 
     fun extractFullHtmlFromMht(mhtText: String): String {
@@ -111,20 +98,17 @@ fun ScheduleUploadScreen(navController: NavController) {
                     for (row in rows) {
                         val cells = row.select("td")
                         if (cells.isEmpty()) continue
-
                         val firstText = cells[0].text().trim()
                         if (Regex("^[A-Z]{2,4} \\d{3}[A-Z]? -").containsMatchIn(firstText)) {
                             currentCourse = firstText.split(" -")[0].trim()
                             continue
                         }
-
                         if (currentCourse == null || currentCourse == "ECE 401") continue
 
                         try {
                             val component = cells.getOrNull(2)?.text()?.trim() ?: continue
                             val timeText = cells.getOrNull(3)?.text()?.trim() ?: continue
                             val dateRange = cells.getOrNull(6)?.text()?.trim() ?: continue
-
                             if ("TBA" in timeText || !timeText.contains("-")) continue
 
                             val match = Regex("([MTWRF]+)\\s+(\\d{1,2}:\\d{2}[APMapm]+)\\s*-\\s*(\\d{1,2}:\\d{2}[APMapm]+)").find(timeText)
@@ -135,10 +119,7 @@ fun ScheduleUploadScreen(navController: NavController) {
                             val end24 = convertTo24Hr(match.groupValues[3])
 
                             val rangeParts = dateRange.split(" - ")
-                            if (rangeParts.size != 2) {
-                                Log.e("SCHEDULE_PARSE", "Skipping row with malformed dateRange: $dateRange")
-                                continue
-                            }
+                            if (rangeParts.size != 2) continue
 
                             val (startStr, endStr) = rangeParts
                             val sdf = SimpleDateFormat("MM/dd/yyyy", Locale.US)
@@ -175,48 +156,34 @@ fun ScheduleUploadScreen(navController: NavController) {
                             }
                         } catch (e: Exception) {
                             Log.e("SCHEDULE_PARSE", "Skipping malformed row", e)
-                            continue
                         }
                     }
 
-                    Log.d("SCHEDULE_ENTRIES", "Parsed entries: ${entries.joinToString("\n")}")
-
                     if (entries.isNotEmpty()) {
+                        eventListState.addAll(entries)
                         Toast.makeText(context, "File Upload Success", Toast.LENGTH_LONG).show()
 
-                        // Convert entries to JSON string
-                        val jsonString = Json.encodeToString(entries)
-
-                        // Then save
-                        CoroutineScope(Dispatchers.IO).launch {
-                            dataStoreManager.saveFixedEvents(jsonString)
+                        val fixedEvents = JSONArray().apply {
+                            put(JSONObject().apply {
+                                put("day", "Monday")
+                                put("start", "10:00")
+                                put("end", "12:00")
+                                put("title", "Math Class")
+                            })
+                            put(JSONObject().apply {
+                                put("day", "Wednesday")
+                                put("start", "14:00")
+                                put("end", "15:30")
+                                put("title", "Chemistry Lab")
+                            })
                         }
-
-                        val flexibleTasks = JSONArray()
-
-                        if (OnboardingDataClass.studyHours.isNotBlank()) {
-                            flexibleTasks.put("Study")
+                        val flexibleTasks = JSONArray().apply {
+                            put("Study"); put("Workout"); put("Read")
                         }
-
-                        if (!OnboardingDataClass.exerciseFrequency.equals("Never", ignoreCase = true)) {
-                            flexibleTasks.put("Workout")
-                        }
-
-                        if (OnboardingDataClass.hobby.isNotBlank()) {
-                            flexibleTasks.put(OnboardingDataClass.hobby)
-                        }
-
-                        OnboardingDataClass.customRoutines.forEach { routine ->
-                            if (routine.isNotBlank()) {
-                                flexibleTasks.put(routine)
-                            }
-                        }
-
                         val payload = JSONObject().apply {
-                            put("fixedEvents", JSONArray())
+                            put("fixedEvents", fixedEvents)
                             put("flexibleTasks", flexibleTasks)
                         }
-
                         val json = JSONObject().apply {
                             put("type", "generate-schedule")
                             put("payload", payload)
@@ -224,18 +191,8 @@ fun ScheduleUploadScreen(navController: NavController) {
 
                         CoroutineScope(Dispatchers.Main).launch {
                             sendScheduleRequestOverWebSocket(json,
-                                onResponse = { responseText ->
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        println("WebSocket Response: $responseText")
-                                        Toast.makeText(context, "Received schedule response", Toast.LENGTH_SHORT).show()
-                                    }
-                                },
-                                onError = { errorMsg ->
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        println("WebSocket error: $errorMsg")
-                                        Toast.makeText(context, "WebSocket error: $errorMsg", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
+                                onResponse = { Toast.makeText(context, "Received schedule response", Toast.LENGTH_SHORT).show() },
+                                onError = { errorMsg -> Toast.makeText(context, "WebSocket error: $errorMsg", Toast.LENGTH_SHORT).show() }
                             )
                         }
                     } else {
@@ -246,58 +203,92 @@ fun ScheduleUploadScreen(navController: NavController) {
         }
     )
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF0E7F4))
-            .padding(horizontal = 24.dp, vertical = 30.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Scaffold(
-            bottomBar = {
+    Scaffold(
+        containerColor = Color.White
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .background(Color.White)
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Custom top bar (matches CustomRoutineScreen)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 32.dp, bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .clickable { navController.popBackStack() }
+                )
+                Text(
+                    text = "Schedula",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Text(
+                "Schedule Upload",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                "Personalize your calendar by uploading your school schedule from the UW Portal",
+                fontSize = 16.sp,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            Button(
+                onClick = { launcher.launch(arrayOf("*/*")) },
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C89B8))
+            ) {
+                Text("Select MHT File", color = Color.White)
+            }
+
+            htmlContent?.let {
+                Text(
+                    "File uploaded successfully!",
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFF4CAF50))
+                )
+            } ?: Text(
+                "No file selected yet",
+                modifier = Modifier.padding(16.dp),
+                style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray)
+            )
+
+            Spacer(Modifier.weight(1f)) // Push next button down
+
+            if (htmlContent != null) {
                 Button(
                     onClick = {
                         navController.navigate("success") {
                             popUpTo("scheduleUpload") { inclusive = true }
                         }
                     },
-                    enabled = htmlContent != null,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .height(48.dp)
+                        .padding(bottom = 24.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C89B8))
                 ) {
                     Text("Next", color = Color.White)
                 }
-            }
-        ) { padding ->
-            Column(Modifier.padding(padding).fillMaxSize()) {
-                Text(
-                    "Personalize your calendar by uploading your school schedule from the UW Portal",
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                Button(
-                    onClick = { launcher.launch(arrayOf("*/*")) },
-                    modifier = Modifier.padding(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6750A4))
-                ) {
-                    Text("Select MHT File", color = Color.White)
-                }
-
-                htmlContent?.let { _ ->
-                    Text(
-                        "File uploaded successfully!",
-                        modifier = Modifier.padding(16.dp),
-                        color = Color(0xFF4CAF50)
-                    )
-                } ?: Text(
-                    "No file selected yet",
-                    modifier = Modifier.padding(16.dp),
-                    color = Color.Gray
-                )
             }
         }
     }
