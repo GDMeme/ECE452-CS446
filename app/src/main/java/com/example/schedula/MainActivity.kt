@@ -4,20 +4,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.schedula.ui.*
 import com.example.schedula.ui.theme.SchedulaTheme
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import java.text.SimpleDateFormat
-import java.util.*
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import androidx.activity.viewModels
-import androidx.lifecycle.ViewModelProvider
 import com.example.schedula.ui.ScheduleViewModel
 
 

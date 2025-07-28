@@ -13,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,12 +21,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.*
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.*
-import okhttp3.RequestBody.Companion.toRequestBody
-import okio.ByteString
 import org.json.JSONArray
 import org.json.JSONObject
 import org.jsoup.Jsoup
@@ -316,7 +312,7 @@ fun ScheduleUploadScreen(
                 ) {
                     Button(
                         onClick = {
-                            navController.navigate("calendar") {
+                            navController.navigate("success") {
                                 popUpTo("scheduleUpload") { inclusive = true }
                             }
                         },

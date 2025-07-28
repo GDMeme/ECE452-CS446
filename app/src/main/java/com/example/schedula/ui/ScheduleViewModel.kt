@@ -3,8 +3,6 @@ package com.example.schedula.ui
 import androidx.lifecycle.ViewModel
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 
 class ScheduleViewModel : ViewModel() {
     // Observable list of events for Compose

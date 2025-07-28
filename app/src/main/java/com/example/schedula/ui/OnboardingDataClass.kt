@@ -3,7 +3,6 @@ package com.example.schedula.ui
 import androidx.compose.runtime.mutableStateListOf
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 object OnboardingDataClass {

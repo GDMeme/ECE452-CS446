@@ -1,7 +1,4 @@
 package com.example.schedula.ui
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
 import com.google.firebase.firestore.DocumentId
 
 data class DailyGoals(
