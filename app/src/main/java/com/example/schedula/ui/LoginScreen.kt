@@ -23,9 +23,14 @@ import androidx.navigation.NavController
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.sp
 import com.example.schedula.AuthenticationRepo
+import com.example.schedula.R
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.alpha
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -33,6 +38,7 @@ fun LoginScreen(navController: NavController) {
     var password by remember { mutableStateOf(TextFieldValue("")) }
     var pwVisible by remember { mutableStateOf(false) }
     var context = LocalContext.current
+    val backgroundColor = Color(0xFFFAF7FC)
 
     //need to figure out how todo all the validation checking
     //ex: email must have @uwaterloo.ca & password should have a minimum length
@@ -40,11 +46,24 @@ fun LoginScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFEFF4F9)) // light blue background
+            .background(backgroundColor) // light blue background
             .padding(horizontal = 24.dp),
         contentAlignment = Alignment.Center
     ) {
+        Image(
+            painter = painterResource(id = R.drawable.schedula_logo),
+            contentDescription = "BackgroundLogo",
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .align(Alignment.Center)
+                .alpha(0.1f),
+            contentScale = ContentScale.Fit
+        )
+
         Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -153,15 +172,14 @@ fun LoginScreen(navController: NavController) {
                         }
 
                     }
-                    navController.navigate("lifestyleQuestionnaire")
                 },
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD7D9F7))
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C89B8))
             ) {
-                Text(text = "Continue", color = Color(0xFF5B5F9D))
+                Text(text = "Continue", fontSize = 18.sp)
             }
 
             Spacer(modifier = Modifier.height(32.dp))

@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}) {
+fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}, source: String) {
     val backgroundColor = Color(0xFFFAF7FC)
     val hobbies = listOf(
         "Reading", "Playing Sports", "Cooking", "Traveling",
@@ -48,9 +48,15 @@ fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}) 
                 modifier = Modifier
                     .padding(end = 8.dp)
                     .clickable {
-                        navController.navigate("lifestyleQuestionnaire") {
-                            popUpTo("hobbiesQuestionnaire") { inclusive = true }
+                        when (source) {
+                            "onboarding" -> navController.navigate("lifestyleQuestionnaire") {
+                                popUpTo("hobbiesQuestionnaire") { inclusive = true }
+                            }
+                            "profile" -> navController.popBackStack()
                         }
+//                        navController.navigate("lifestyleQuestionnaire") {
+//                            popUpTo("hobbiesQuestionnaire") { inclusive = true }
+//                        }
                     }
             )
             Text(
@@ -103,6 +109,6 @@ fun HobbySelectionScreen(navController: NavController, onNext: () -> Unit = {}) 
 
 @Preview(showBackground = true)
 @Composable
-fun HobbySelectionScreenPreview() {
-    HobbySelectionScreen(navController = rememberNavController())
+fun HobbySelectionScreenPreview(source: String) {
+    HobbySelectionScreen(navController = rememberNavController(), {}, source)
 }

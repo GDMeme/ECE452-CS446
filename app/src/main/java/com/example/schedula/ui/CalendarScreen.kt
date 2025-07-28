@@ -87,17 +87,19 @@ fun CalendarScreen(navController: NavController, eventList: SnapshotStateList<Ev
                         Text("Date: ${selectedEvent!!.date}")
 
                         if (selectedEvent!!.title.contains("study", ignoreCase = true)) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(onClick = {
-                                selectedEvent = null
-                                navController.navigate(("timer"))
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = purple,
-                                contentColor = Color.White
-                            )) {
-                                Text("Open Timer")
-                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "Open Timer",
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .clickable {
+                                        selectedEvent = null
+                                        navController.navigate("timer")
+                                    },
+                                color = purple,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
                         }
                     }
                 }

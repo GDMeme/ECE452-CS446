@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.navigation.compose.*
+import androidx.navigation.navArgument
 import com.example.schedula.ui.*
 import com.example.schedula.ui.theme.SchedulaTheme
 import java.text.SimpleDateFormat
@@ -114,8 +115,11 @@ fun SchedulaApp() {
     ) {
         composable("login") { LoginScreen(navController) }
         composable("signup") { SignUpScreen(navController) }
-        composable("lifestyleQuestionnaire") {
-            LifestyleQuestionnaireScreen(navController, {}, {})
+        composable(route = "lifestyleQuestionnaire?source={source}", arguments = listOf(navArgument("source") {
+            defaultValue = "onboarding"
+        })) { backStackEntry ->
+            val source = backStackEntry.arguments?.getString("source") ?: "onboarding"
+            LifestyleQuestionnaireScreen(navController, {}, {}, source)
         }
         composable("scheduleUpload") {
             ScheduleUploadScreen(navController, eventList)
@@ -123,14 +127,20 @@ fun SchedulaApp() {
         composable("success") { SuccessScreen(navController) }
         composable("leaderboard") { LeaderboardScreen(navController) }
         composable("timer") { TimerScreen(navController) }
-        composable("extendedQuestionnaire") {
-            ExtendedLifestyleScreen(navController, {})
+//        composable("extendedQuestionnaire") {
+//            ExtendedLifestyleScreen(navController, {})
+//        }
+        composable("hobbiesQuestionnaire?source={source}", arguments = listOf(navArgument("source") {
+            defaultValue = "onboarding"
+        })) { backStackEntry ->
+            val source = backStackEntry.arguments?.getString("source") ?: "onboarding"
+            HobbySelectionScreen(navController, {}, source)
         }
-        composable("hobbiesQuestionnaire") {
-            HobbySelectionScreen(navController, {})
-        }
-        composable("customRoutineQuestionnaire") {
-            CustomRoutineScreen(navController, {})
+        composable("customRoutineQuestionnaire?source={source}", arguments = listOf(navArgument("source") {
+            defaultValue = "onboarding"
+        })) { backStackEntry ->
+            val source = backStackEntry.arguments?.getString("source") ?: "onboarding"
+            CustomRoutineScreen(navController, {}, source)
         }
         composable("home") { HomeScreen(navController) }
         composable("calendar") {

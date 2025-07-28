@@ -21,7 +21,8 @@ import androidx.navigation.compose.rememberNavController
 @Composable
 fun CustomRoutineScreen(
     navController: NavController,
-    onNext: () -> Unit = {}
+    onNext: () -> Unit = {},
+    source: String
 ) {
     val backgroundColor = Color(0xFFFAF7FC)
     val routines = remember { List(4) { mutableStateOf("") } }
@@ -47,9 +48,15 @@ fun CustomRoutineScreen(
                 modifier = Modifier
                     .padding(end = 8.dp)
                     .clickable {
-                        navController.navigate("hobbiesQuestionnaire") {
-                            popUpTo("customRoutineQuestionnaire") { inclusive = true }
+                        when (source) {
+                            "onboarding" -> navController.navigate("hobbiesQuestionnaire") {
+                                popUpTo("customRoutineQuestionnaire") { inclusive = true }
+                            }
+                            "profile" -> navController.popBackStack()
                         }
+//                        navController.navigate("hobbiesQuestionnaire") {
+//                            popUpTo("customRoutineQuestionnaire") { inclusive = true }
+//                        }
                     }
             )
             Text(
@@ -101,6 +108,6 @@ fun CustomRoutineScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun CustomRoutineScreenPreview() {
-    CustomRoutineScreen(navController = rememberNavController())
+fun CustomRoutineScreenPreview(source: String) {
+    CustomRoutineScreen(navController = rememberNavController(), {}, source)
 }

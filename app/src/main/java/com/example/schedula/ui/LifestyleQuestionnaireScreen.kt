@@ -1,5 +1,6 @@
 package com.example.schedula.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,13 +25,15 @@ import java.util.*
 fun LifestyleQuestionnaireScreen(
     navController: NavController,
     onBack: () -> Unit = {},
-    onNext: (LifestyleQuestionnaireAnswers) -> Unit = {}
+    onNext: (LifestyleQuestionnaireAnswers) -> Unit = {},
+    source: String
 ) {
     var bedTime by remember { mutableStateOf("11:30 PM") }
     var wakeTime by remember { mutableStateOf("7:30 AM") }
     var exerciseNum by remember { mutableIntStateOf(1) }
 
     val exerciseChoices = listOf("Not at all", "2–3 times", "3+ times")
+    val backgroundColor = Color(0xFFFAF7FC)
 
     var showBedPicker by remember { mutableStateOf(false) }
     var showWakePicker by remember { mutableStateOf(false) }
@@ -82,7 +85,8 @@ fun LifestyleQuestionnaireScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = 24.dp)
+            .background(backgroundColor),
         verticalArrangement = Arrangement.Center
     ) {
         Row(
@@ -97,9 +101,15 @@ fun LifestyleQuestionnaireScreen(
                 modifier = Modifier
                     .padding(end = 8.dp)
                     .clickable {
-                        navController.navigate("login") {
-                            popUpTo("lifestyleQuestionnaire") { inclusive = true }
+                        when (source) {
+                            "onboarding" -> navController.navigate("login") {
+                                popUpTo("lifestyleQuestionnaire") { inclusive = true }
+                            }
+                            "profile" -> navController.popBackStack()
                         }
+//                        navController.navigate("login") {
+//                            popUpTo("lifestyleQuestionnaire") { inclusive = true }
+//                        }
                     }
             )
             Text(
@@ -203,10 +213,10 @@ fun LifestyleQuestionnaireScreen(
                 .padding(bottom = 24.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFD7D9F7)
+                containerColor = Color(0xFF9C89B8)
             )
         ) {
-            Text("Next", color = Color(0xFF5B5F9D))
+            Text("Next", fontSize = 18.sp)
         }
     }
 }

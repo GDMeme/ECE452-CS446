@@ -261,7 +261,7 @@ fun ScheduleUploadScreen(navController: NavController, eventListState: SnapshotS
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6750A4))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C89B8))
                 ) {
                     Text("Next", color = Color.White)
                 }
