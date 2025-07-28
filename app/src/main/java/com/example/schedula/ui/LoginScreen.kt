@@ -165,7 +165,7 @@ fun LoginScreen(navController: NavController) {
                                     val dataStoreManager = DataStoreManager(context)
                                     val hasSchedule = dataStoreManager.hasExistingSchedule()
                                     if (hasSchedule) {
-                                        navController.navigate("calendarScreen") {
+                                        navController.navigate("calendar") {
                                             popUpTo("login") { inclusive = true }
                                         }
                                     } else {

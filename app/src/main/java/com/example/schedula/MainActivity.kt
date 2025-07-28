@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
 
             startDestination = when {
                 !isUserSignedIn -> "login"
-                !questionnaireCompleted -> "lifestyleQuestionnaire" // or first questionnaire screen
+                !questionnaireCompleted -> "lifestyleQuestionnaire" // first questionnaire screen
                 else -> "home"
             }
 
