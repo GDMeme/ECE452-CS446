@@ -48,28 +48,30 @@ data class HomeEvent(
 @Composable
 fun HomeScreen(navController: NavController) {
     val backgroundColor = Color(0xFFF0E7F4)
-    val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     val currentUser = FirebaseAuth.getInstance().currentUser
     val userName = currentUser?.displayName ?: "User"
 
     val showNotifications = remember { mutableStateOf(false) }
-    val notifications = remember {
-        mutableStateListOf(
-            "💡 Study Session at 5:00 PM",
-            "🎯 2 out of 4 daily goals completed",
-            "⏰ Timer running for 30 mins"
-        )
+    val eventList = remember {
+        mutableStateListOf<HomeEvent>().apply {
+            clear()
+            addAll(OnboardingDataClass.fixedEvents.map { event ->
+                HomeEvent(event.title, event.startTime, event.endTime, event.date)
+            })
+            addAll(OnboardingDataClass.flexibleEvents.map { event ->
+                HomeEvent(event.title, event.startTime, event.endTime, event.date)
+            })
+        }
     }
 
-    val eventList = remember {
-        mutableStateListOf(
-            HomeEvent("ECE 452 @ MC 2017", "13:00", "14:20", todayDate),
-            HomeEvent("MSE 452 @ CPH 3681", "11:30", "12:50", todayDate),
-            HomeEvent("🏃 Exercise", "15:00", "16:00", todayDate),
-            HomeEvent("💡 Study Session", "17:00", "18:00", todayDate),
-            HomeEvent("🍽️ Dinner", "18:00", "19:00", todayDate),
-            HomeEvent("💡 Study Session", "20:00", "21:00", todayDate)
-        )
+    val notifications = remember {
+        mutableStateListOf<String>().apply {
+            clear()
+            eventList.forEach { event ->
+                // Customize your notification text however you want
+                add("💡 ${event.title} at ${event.startTime}")
+            }
+        }
     }
 
     // --- Persistence Changes Start Here ---
