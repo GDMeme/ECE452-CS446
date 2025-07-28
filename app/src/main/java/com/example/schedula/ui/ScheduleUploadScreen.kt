@@ -3,17 +3,24 @@ package com.example.schedula.ui
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.*
@@ -32,6 +39,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleUploadScreen(
     navController: androidx.navigation.NavController,
@@ -41,16 +49,16 @@ fun ScheduleUploadScreen(
     var htmlContent by remember { mutableStateOf<String?>(null) }
     var isGeneratingSchedule by remember { mutableStateOf(false) }
 
-    fun convertTo24Hr(time12hr: String): String {
-        return try {
-            val sdf12 = SimpleDateFormat("hh:mma", Locale.US)
-            val sdf24 = SimpleDateFormat("HH:mm", Locale.US)
-            sdf24.format(sdf12.parse(time12hr.replace(" ", "").uppercase(Locale.US))!!)
-        } catch (e: Exception) {
-            Log.e("TimeParse", "Failed to parse time: $time12hr", e)
-            time12hr
-        }
+fun convertTo24Hr(time12hr: String): String {
+    return try {
+        val sdf12 = SimpleDateFormat("hh:mma", Locale.US)
+        val sdf24 = SimpleDateFormat("HH:mm", Locale.US)
+        sdf24.format(sdf12.parse(time12hr.replace(" ", "").uppercase(Locale.US))!!)
+    } catch (e: Exception) {
+        Log.e("TimeParse", "Failed to parse time: $time12hr", e)
+        time12hr
     }
+}
 
     fun expandWeeklyRecurringEvents(
         baseEvents: List<Event>,
@@ -134,20 +142,17 @@ fun ScheduleUploadScreen(
                     for (row in rows) {
                         val cells = row.select("td")
                         if (cells.isEmpty()) continue
-
                         val firstText = cells[0].text().trim()
                         if (Regex("^[A-Z]{2,4} \\d{3}[A-Z]? -").containsMatchIn(firstText)) {
                             currentCourse = firstText.split(" -")[0].trim()
                             continue
                         }
-
                         if (currentCourse == null || currentCourse == "ECE 401") continue
 
                         try {
                             val component = cells.getOrNull(2)?.text()?.trim() ?: continue
                             val timeText = cells.getOrNull(3)?.text()?.trim() ?: continue
                             val dateRange = cells.getOrNull(6)?.text()?.trim() ?: continue
-
                             if ("TBA" in timeText || !timeText.contains("-")) continue
 
                             val match = Regex("([MTWRF]+)\\s+(\\d{1,2}:\\d{2}[APMapm]+)\\s*-\\s*(\\d{1,2}:\\d{2}[APMapm]+)").find(timeText)
@@ -202,6 +207,8 @@ fun ScheduleUploadScreen(
                             continue
                         }
                     }
+                    
+                    Log.d("SCHEDULE_ENTRIES", "Parsed entries: ${entries.joinToString("\n")}")
 
                     if (entries.isNotEmpty()) {
                         htmlContent = "Uploaded"
@@ -278,15 +285,77 @@ fun ScheduleUploadScreen(
         }
     )
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF0E7F4))
-            .padding(horizontal = 24.dp, vertical = 30.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Scaffold(
-            bottomBar = {
+    Scaffold(
+        containerColor = Color.White
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .background(Color.White)
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Custom top bar (matches CustomRoutineScreen)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 32.dp, bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .clickable { navController.popBackStack() }
+                )
+                Text(
+                    text = "Schedula",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Text(
+                "Schedule Upload",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                "Personalize your calendar by uploading your school schedule from the UW Portal",
+                fontSize = 16.sp,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            Button(
+                onClick = { launcher.launch(arrayOf("*/*")) },
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C89B8))
+            ) {
+                Text("Select MHT File", color = Color.White)
+            }
+
+            htmlContent?.let {
+                Text(
+                    "File uploaded successfully!",
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFF4CAF50))
+                )
+            } ?: Text(
+                "No file selected yet",
+                modifier = Modifier.padding(16.dp),
+                style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray)
+            )
+
+            Spacer(Modifier.weight(1f)) // Push next button down
+
+            if (htmlContent != null) {
                 Button(
                     onClick = {
                         navController.navigate("calendar") {
@@ -297,57 +366,16 @@ fun ScheduleUploadScreen(
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .height(48.dp)
+                        .padding(bottom = 24.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C89B8))
                 ) {
                     Text("Next", color = Color.White)
                 }
             }
-        ) { padding ->
-            Column(
-                Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-            ) {
-                Text(
-                    "Personalize your calendar by uploading your school schedule from the UW Portal",
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                Button(
-                    onClick = { launcher.launch(arrayOf("*/*")) },
-                    modifier = Modifier.padding(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6750A4))
-                ) {
-                    Text("Select MHT File", color = Color.White)
-                }
-
-                if (htmlContent != null) {
-                    Text(
-                        "File uploaded successfully!",
-                        modifier = Modifier.padding(16.dp),
-                        color = Color(0xFF4CAF50)
-                    )
-                } else {
-                    Text(
-                        "No file selected yet",
-                        modifier = Modifier.padding(16.dp),
-                        color = Color.Gray
-                    )
-                }
-
-                if (isGeneratingSchedule) {
-                    Spacer(Modifier.height(20.dp))
-                    Text(
-                        "Generating schedule, please wait...",
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = Color(0xFF9C89B8),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
-                }
-            }
+        }
+        
+            
         }
     }
 }
