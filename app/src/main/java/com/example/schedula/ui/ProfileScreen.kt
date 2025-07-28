@@ -168,10 +168,9 @@ fun ProfileScreen(navController: NavController) {
 
             SettingsMenu(
                 onEditUsername = { isEditingName = true },
-                onPrivacySettings = {
-                    // TODO: implement action
-                }
+                navController = navController
             )
+
 
             SettingsItem(Icons.Default.Edit, "Edit Questionnaire", "View & Edit Answers") {
                 navController.navigate("questionsMenu")
@@ -264,7 +263,7 @@ fun SettingsItem(icon: ImageVector, title: String, subtitle: String, onClick: ((
 @Composable
 fun SettingsMenu(
     onEditUsername: () -> Unit,
-    onPrivacySettings: () -> Unit
+    navController: NavController
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -282,7 +281,7 @@ fun SettingsMenu(
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text("Settings", fontWeight = FontWeight.Medium)
-                    Text("Security, Privacy", fontSize = 12.sp, color = Color.Gray)
+                    Text("Account Options", fontSize = 12.sp, color = Color.Gray)
                 }
             }
         }
@@ -299,15 +298,19 @@ fun SettingsMenu(
                 }
             )
             DropdownMenuItem(
-                text = { Text("Privacy Settings") },
+                text = { Text("Log Out") },
                 onClick = {
                     expanded = false
-                    onPrivacySettings()
+                    FirebaseAuth.getInstance().signOut()
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true } // Clear backstack
+                    }
                 }
             )
         }
     }
 }
+
 
 @Composable
 fun TabChip(text: String, selected: Boolean, onClick: () -> Unit) {
