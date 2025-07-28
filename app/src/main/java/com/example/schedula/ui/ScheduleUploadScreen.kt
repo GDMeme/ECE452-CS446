@@ -234,7 +234,7 @@ fun ScheduleUploadScreen(
                         val flexibleTasks = JSONArray()
                         if (OnboardingDataClass.studyHours.isNotBlank()) flexibleTasks.put("Study")
                         if (!OnboardingDataClass.exerciseFrequency.equals("Never", ignoreCase = true)) flexibleTasks.put("Workout")
-                        if (OnboardingDataClass.hobby.isNotBlank()) flexibleTasks.put(OnboardingDataClass.hobby)
+                        if (OnboardingDataClass.hobbiesSelected.size != 0) flexibleTasks.put(OnboardingDataClass.hobbiesSelected)
                         OnboardingDataClass.customRoutines.forEach { routine ->
                             if (routine.isNotBlank()) flexibleTasks.put(routine)
                         }

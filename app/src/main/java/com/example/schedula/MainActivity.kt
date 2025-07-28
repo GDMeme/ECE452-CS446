@@ -31,11 +31,10 @@ class MainActivity : ComponentActivity() {
             OnboardingDataClass.loadFromDataStore(dataStoreManager)
 
             val isUserSignedIn = Firebase.auth.currentUser != null
-            val questionnaireCompleted = dataStoreManager.isQuestionnaireCompleted()
+//            val questionnaireCompleted = dataStoreManager.isQuestionnaireCompleted()
 
             startDestination = when {
                 !isUserSignedIn -> "login"
-                !questionnaireCompleted -> "lifestyleQuestionnaire" // first questionnaire screen
                 else -> "home"
             }
 
