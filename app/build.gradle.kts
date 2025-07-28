@@ -69,8 +69,11 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.android.material:material:1.10.0")
     implementation("org.jsoup:jsoup:1.17.2")
+    implementation("androidx.work:work-runtime-ktx:2.8.1")
 
-
+    implementation(libs.androidx.compose.runtime.runtime.livedata2)
+    implementation(libs.ui)
+    implementation(libs.material3)
 
     //Room - Data Storage
     // Navigation Component

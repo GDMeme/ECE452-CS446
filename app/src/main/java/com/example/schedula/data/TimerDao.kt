@@ -22,8 +22,18 @@ interface TimerDao {
     suspend fun deleteTimer(timer: Timer)
 
     @Query("DELETE FROM timer_table")
-    fun deleteAllTimers()
+    suspend fun deleteAllTimers()
 
     @Query("SELECT * FROM timer_table ORDER BY id ASC")
-    fun readAllData(): LiveData<List<Timer>>
+    fun getAllTimers(): LiveData<List<Timer>>
+
+    @Query("SELECT * FROM timer_table WHERE timerType == 'Pomodoro' ORDER BY id ASC")
+    fun getPomodoros(): LiveData<List<Timer>>
+
+    @Query("SELECT * FROM timer_table WHERE timerType == 'Break' ORDER BY id ASC")
+    fun getBreaks(): LiveData<List<Timer>>
+
+    @Query("SELECT * FROM timer_table WHERE id = :id")
+    fun getTimerById(id: Int): LiveData<Timer>
+
 }

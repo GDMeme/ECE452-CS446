@@ -6,25 +6,46 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.*
+import androidx.room.Room
 import com.example.schedula.ui.*
+import com.example.schedula.data.AppDatabase
+import com.example.schedula.data.Timer
+import com.example.schedula.data.TimerDao
+import com.example.schedula.data.TimerRepository
+import com.example.schedula.data.TimerViewModel
+import com.example.schedula.data.TimerViewModelFactory
 import com.example.schedula.ui.theme.SchedulaTheme
 import java.text.SimpleDateFormat
 import java.util.*
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var appDatabase: AppDatabase
+    private lateinit var timerDao: TimerDao
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        appDatabase = AppDatabase.getDatabase(context = applicationContext)
+        timerDao = appDatabase.timerDao()
+
         setContent {
             SchedulaTheme {
-                SchedulaApp()
+
+                val timerRepository = TimerRepository(timerDao)
+                val timerViewModel :TimerViewModel = viewModel(factory = TimerViewModelFactory(timerRepository))
+
+                SchedulaApp(timerViewModel)
             }
         }
     }
 }
 
 @Composable
-fun SchedulaApp() {
+fun SchedulaApp(timerViewModel: TimerViewModel) {
+
     val eventList = remember {
         mutableStateListOf<Event>().apply {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -110,7 +131,7 @@ fun SchedulaApp() {
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = "home"
     ) {
         composable("login") { LoginScreen(navController) }
         composable("signup") { SignUpScreen(navController) }
@@ -122,7 +143,7 @@ fun SchedulaApp() {
         }
         composable("success") { SuccessScreen(navController) }
         composable("leaderboard") { LeaderboardScreen(navController) }
-        composable("timer") { TimerScreen(navController) }
+        composable("timer") { TimerScreen(navController, timerViewModel) }
         composable("extendedQuestionnaire") {
             ExtendedLifestyleScreen(navController, {})
         }

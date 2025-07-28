@@ -1,4 +1,3 @@
-
 package com.example.schedula.ui
 
 import androidx.compose.foundation.background
@@ -12,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,12 +20,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
 import androidx.navigation.NavController
 import com.example.schedula.ui.components.BottomNavBar
+import com.example.schedula.data.Timer
+import com.example.schedula.data.TimerViewModel
 
 @Composable
-fun TimerScreen(navController: NavController) {
+fun TimerScreen(
+    navController: NavController,
+    timerViewModel: TimerViewModel
+) {
     val backgroundColor = Color(0xFFF0E7F4)
     val accentPurple = Color(0xFFE6DEF6)
     val borderPurple = Color(0xFF9C89B8)
@@ -37,19 +41,19 @@ fun TimerScreen(navController: NavController) {
     var taskInput by remember { mutableStateOf(TextFieldValue("")) }
     val taskList = remember { mutableStateListOf<String>() }
 
-    LaunchedEffect(isRunning, selectedMode) {
-        while (isRunning && timeLeft > 0) {
-            delay(1000L)
-            timeLeft--
+    val pomodoroTimer by timerViewModel.pomodoroTimer.observeAsState()
+    val breakTimer by timerViewModel.breakTimer.observeAsState()
+
+    val currentSelectedTimer = remember(pomodoroTimer, breakTimer) {
+        when {
+            pomodoroTimer?.isSelected == true -> pomodoroTimer
+            breakTimer?.isSelected == true -> breakTimer
+            else -> pomodoroTimer // Default to Pomodoro, which might still be null initially
         }
     }
 
-    fun resetTimer() {
-        timeLeft = if (selectedMode == "Pomodoro") 25 * 60 else 5 * 60
-    }
-
-    val minutes = timeLeft / 60
-    val seconds = timeLeft % 60
+    val displayMinutes = currentSelectedTimer?.timeRemaining?.div(60) ?: 0
+    val displaySeconds = currentSelectedTimer?.timeRemaining?.rem(60) ?: 0
 
     Scaffold(
         bottomBar = {
@@ -86,8 +90,6 @@ fun TimerScreen(navController: NavController) {
                             .background(if (isSelected) accentPurple else backgroundColor)
                             .clickable {
                                 selectedMode = mode
-                                resetTimer()
-                                isRunning = false
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -107,20 +109,48 @@ fun TimerScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(String.format("%02d", minutes), fontSize = 64.sp, fontWeight = FontWeight.Bold, color = textColor)
+                Text(
+                    String.format("%02d", displayMinutes),
+                    fontSize = 64.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textColor
+                )
                 Text(":", fontSize = 64.sp, fontWeight = FontWeight.Bold, color = textColor)
-                Text(String.format("%02d", seconds), fontSize = 64.sp, fontWeight = FontWeight.Bold, color = textColor)
+                Text(
+                    String.format("%02d", displaySeconds),
+                    fontSize = 64.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textColor
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                onClick = { isRunning = !isRunning },
-                colors = ButtonDefaults.buttonColors(containerColor = accentPurple),
-                shape = RoundedCornerShape(8.dp),
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Text(if (isRunning) "Pause" else "Start", color = textColor)
+                Button(
+                    onClick = { isRunning != isRunning },
+                    colors = ButtonDefaults.buttonColors(containerColor = accentPurple),
+                    shape = RoundedCornerShape(8.dp),
+                    ) {
+                    Text(if (isRunning) "Pause" else "Start", color = textColor)
+                }
+
+                Spacer(modifier = Modifier.width(36.dp))
+
+                Button(
+                    onClick = {
+                        timerViewModel.resetTimer(currentSelectedTimer!!)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = accentPurple),
+                    shape = RoundedCornerShape(8.dp),
+                    ) {
+                    Text("Reset", color = textColor)
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -140,9 +170,18 @@ fun TimerScreen(navController: NavController) {
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(12.dp)
                         ) {
-                            Text(task, fontSize = 16.sp, modifier = Modifier.weight(1f), color = textColor)
+                            Text(
+                                task,
+                                fontSize = 16.sp,
+                                modifier = Modifier.weight(1f),
+                                color = textColor
+                            )
                             IconButton(onClick = { taskList.removeAt(index) }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete task", tint = borderPurple)
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = "Delete task",
+                                    tint = borderPurple
+                                )
                             }
                         }
                     }
@@ -175,7 +214,7 @@ fun TimerScreen(navController: NavController) {
                 shape = RoundedCornerShape(50),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("+  Add Task", color = textColor)
+                Text("+ Add Task", color = textColor)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
