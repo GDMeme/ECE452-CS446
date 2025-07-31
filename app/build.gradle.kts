@@ -75,6 +75,7 @@ dependencies {
     implementation("org.json:json:20240303")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("androidx.compose.runtime:runtime-livedata:1.6.0")
 
     // Room - Data Storage
     // Navigation Component

@@ -27,13 +27,13 @@ interface TimerDao {
     @Query("SELECT * FROM timer_table ORDER BY id ASC")
     fun getAllTimers(): LiveData<List<Timer>>
 
-    @Query("SELECT * FROM timer_table WHERE timerType == 'Pomodoro' ORDER BY id ASC")
-    fun getPomodoros(): LiveData<List<Timer>>
-
-    @Query("SELECT * FROM timer_table WHERE timerType == 'Break' ORDER BY id ASC")
-    fun getBreaks(): LiveData<List<Timer>>
-
     @Query("SELECT * FROM timer_table WHERE id = :id")
     fun getTimerById(id: Int): LiveData<Timer>
+
+    @Query("SELECT * FROM timer_table WHERE timerType = 'Pomodoro'")
+    fun getPomodoroTimers(): LiveData<List<Timer>>
+
+    @Query("SELECT * FROM timer_table WHERE timerType = 'Break'")
+    fun getBreakTimers(): LiveData<List<Timer>>
 
 }

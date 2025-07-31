@@ -13,6 +13,11 @@ import com.google.firebase.ktx.Firebase
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import androidx.activity.viewModels
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.schedula.data.AppDatabase
+import com.example.schedula.data.TimerRepository
+import com.example.schedula.data.TimerViewModel
+import com.example.schedula.data.TimerViewModelFactory
 import com.example.schedula.ui.ScheduleViewModel
 
 
@@ -27,6 +32,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         dataStoreManager = DataStoreManager(applicationContext)
 
+        val database = AppDatabase.getDatabase(context = applicationContext)
+        val timerDao = database.timerDao()
+
         lifecycleScope.launch {
             OnboardingDataClass.loadFromDataStore(dataStoreManager)
 
@@ -40,7 +48,9 @@ class MainActivity : ComponentActivity() {
 
             setContent {
                 SchedulaTheme {
-                    SchedulaApp(startDestination, scheduleViewModel)
+                    val timerRepository = TimerRepository(timerDao)
+                    val timerViewModel:TimerViewModel = viewModel(factory = TimerViewModelFactory(timerRepository))
+                    SchedulaApp(startDestination, scheduleViewModel, timerViewModel)
                 }
             }
         }
@@ -48,7 +58,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun SchedulaApp(startDestination: String, scheduleViewModel: ScheduleViewModel) {
+fun SchedulaApp(
+    startDestination: String,
+    scheduleViewModel: ScheduleViewModel,
+    timerViewModel: TimerViewModel
+) {
     val navController = rememberNavController()
 
     NavHost(
@@ -68,7 +82,7 @@ fun SchedulaApp(startDestination: String, scheduleViewModel: ScheduleViewModel) 
         }
         composable("success") { SuccessScreen(navController) }
         composable("leaderboard") { LeaderboardScreen(navController) }
-        composable("timer") { TimerScreen(navController) }
+        composable("timer") { TimerScreen(navController,timerViewModel) }
         composable(route = "hobbiesQuestionnaire?source={source}", arguments = listOf(navArgument("source") {
             defaultValue = "onboarding"
         })) { backStackEntry ->

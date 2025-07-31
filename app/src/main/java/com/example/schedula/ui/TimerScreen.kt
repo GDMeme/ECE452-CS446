@@ -28,9 +28,13 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import android.util.Log
+import androidx.compose.runtime.livedata.observeAsState
+import com.example.schedula.data.Timer
+import com.example.schedula.data.TimerViewModel
 
 @Composable
-fun TimerScreen(navController: NavController) {
+fun TimerScreen(navController: NavController, timerViewModel: TimerViewModel) {
+
     val backgroundColor = Color(0xFFF0E7F4)
     val accentPurple = Color(0xFFE6DEF6)
     val borderPurple = Color(0xFF9C89B8)
@@ -44,16 +48,27 @@ fun TimerScreen(navController: NavController) {
 
     val context = LocalContext.current
 
-    LaunchedEffect(isRunning, selectedMode) {
-        while (isRunning && timeLeft > 0) {
-            delay(1000L)
-            timeLeft--
-        }
-    }
+    val timers = timerViewModel.timers.observeAsState()
+    val pomodoroTimers = timerViewModel.pomodoroTimers.observeAsState()
+    val breakTimers = timerViewModel.breakTimers.observeAsState()
 
-    fun resetTimer() {
-        // When resetting, check the selected mode to set the correct time
-        timeLeft = if (selectedMode == "Pomodoro") 25 * 60 else 5 * 60
+    var currentTimer: Timer
+
+    if (timers.value.isNullOrEmpty()) {
+        currentTimer = Timer(
+            id = 0,
+            isRunning = isRunning,
+            startTime = 0,
+            timeRemaining = timeLeft,
+            timerType = selectedMode
+        )
+        timerViewModel.addTimer(currentTimer)
+    }
+    else {
+        currentTimer = timers.value!![0]
+        selectedMode = currentTimer.timerType
+        isRunning = currentTimer.isRunning
+        timeLeft = currentTimer.timeRemaining
     }
 
     val minutes = timeLeft / 60
@@ -116,8 +131,20 @@ fun TimerScreen(navController: NavController) {
                             .background(if (isSelected) accentPurple else backgroundColor)
                             .clickable {
                                 selectedMode = mode
-                                resetTimer()
-                                isRunning = false
+                                if (selectedMode == "Pomodoro") {
+                                    if (!pomodoroTimers.value.isNullOrEmpty()) {
+                                        currentTimer = pomodoroTimers.value!![0]
+                                    }
+                                    else timerViewModel.addTimerGivenType("Pomodoro")
+                                    }
+
+                                if (selectedMode == "Break") {
+                                    if (!breakTimers.value.isNullOrEmpty()) {
+                                        currentTimer = breakTimers.value!![0]
+                                    }
+                                    else timerViewModel.addTimerGivenType("Break")
+                                }
+                                // isRunning = false
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -137,17 +164,33 @@ fun TimerScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(String.format("%02d", minutes), fontSize = 64.sp, fontWeight = FontWeight.Bold, color = textColor)
+                Text(
+                    String.format("%02d", minutes),
+                    fontSize = 64.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textColor
+                )
                 Text(":", fontSize = 64.sp, fontWeight = FontWeight.Bold, color = textColor)
-                Text(String.format("%02d", seconds), fontSize = 64.sp, fontWeight = FontWeight.Bold, color = textColor)
+                Text(
+                    String.format("%02d", seconds),
+                    fontSize = 64.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textColor
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
             Button(
                 onClick = {
                     // Condition to check if XP should be awarded
-                    val shouldAwardXp = !isRunning && timeLeft == 25 * 60 && selectedMode == "Pomodoro"
+                    val shouldAwardXp =
+                        !isRunning && timeLeft == 25 * 60 && selectedMode == "Pomodoro"
 
                     // Toggle the running state
                     isRunning = !isRunning
@@ -156,19 +199,38 @@ fun TimerScreen(navController: NavController) {
                     if (shouldAwardXp) {
                         updateUserXP(10) { success ->
                             if (success) {
-                                Toast.makeText(context, "Gained 10 XP for starting a new Pomodoro!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Gained 10 XP for starting a new Pomodoro!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             } else {
-                                Toast.makeText(context, "Failed to update XP", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Failed to update XP", Toast.LENGTH_SHORT)
+                                    .show()
                             }
                         }
                     }
+                    if (isRunning) timerViewModel.startTimer(currentTimer)
+                    else timerViewModel.pauseTimer(currentTimer)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = accentPurple),
                 shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Text(if (isRunning) "Pause" else "Start", color = textColor)
             }
+
+            Spacer(modifier = Modifier.width(36.dp))
+
+            Button(
+                onClick = {
+                    timerViewModel.resetTimer(currentTimer)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = accentPurple),
+                shape = RoundedCornerShape(8.dp),
+            ) {
+                Text("Reset", color = textColor)
+            }
+        }
 
             Spacer(modifier = Modifier.height(32.dp))
 
