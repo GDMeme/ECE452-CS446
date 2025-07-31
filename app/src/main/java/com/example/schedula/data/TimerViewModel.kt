@@ -1,6 +1,7 @@
 package com.example.schedula.data
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
@@ -8,9 +9,41 @@ import kotlinx.coroutines.launch
 
 class TimerViewModel(private val repository: TimerRepository) : ViewModel() {
 
+    private val defaultTimer = Timer(
+        id = 0,
+        isRunning = false,
+        startTime = System.currentTimeMillis(),
+        timeRemaining = 25 * 60,
+        timerType = "Pomodoro"
+    )
+
     val timers = getAllTimers()
     val pomodoroTimers = getPomodoros()
     val breakTimers = getBreaks()
+
+    private var _currentTimer = MutableLiveData<Timer>(timers.value?.get(0) ?: defaultTimer)
+    val currentTimer: LiveData<Timer> = _currentTimer
+    fun updateCurrentTimer(timer:Timer) {
+        _currentTimer.value = timer
+    }
+
+//    private val _timerType = MutableLiveData<String>("Pomodoro")
+//    val timerType: LiveData<String> = _timerType
+//    fun updateType(newType:String) {
+//        _timerType.value = newType
+//    }
+//
+//    private val _timeRemaining = MutableLiveData<Int>(25*60)
+//    val timeRemaining: LiveData<Int> = _timeRemaining
+//    fun updateTimeRemaining(newTimeRemaining:Int) {
+//        _timeRemaining.value = newTimeRemaining
+//    }
+//
+//    private val _isRunning = MutableLiveData<Boolean>(false)
+//    val isRunning: LiveData<Boolean> = _isRunning
+//    fun updateIsRunning(newIsRunning:Boolean) {
+//        _isRunning.value = newIsRunning
+//    }
 
     fun runTimer(timer: Timer) {
         viewModelScope.launch {

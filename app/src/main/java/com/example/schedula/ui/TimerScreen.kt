@@ -40,39 +40,23 @@ fun TimerScreen(navController: NavController, timerViewModel: TimerViewModel) {
     val borderPurple = Color(0xFF9C89B8)
     val textColor = Color(0xFF3B3B3B)
 
-    var selectedMode by remember { mutableStateOf("Pomodoro") }
-    var isRunning by remember { mutableStateOf(false) }
-    var timeLeft by remember { mutableStateOf(25 * 60) }
+    val context = LocalContext.current
     var taskInput by remember { mutableStateOf(TextFieldValue("")) }
     val taskList = remember { mutableStateListOf<String>() }
-
-    val context = LocalContext.current
 
     val timers = timerViewModel.timers.observeAsState()
     val pomodoroTimers = timerViewModel.pomodoroTimers.observeAsState()
     val breakTimers = timerViewModel.breakTimers.observeAsState()
 
-    var currentTimer: Timer
+    var currentTimer = timerViewModel.currentTimer.observeAsState().value!!
+    var selectedMode = currentTimer.timerType
+    var isRunning = currentTimer.isRunning
+    var timeLeft = currentTimer.timeRemaining
 
-    if (timers.value.isNullOrEmpty()) {
-        currentTimer = Timer(
-            id = 0,
-            isRunning = isRunning,
-            startTime = 0,
-            timeRemaining = timeLeft,
-            timerType = selectedMode
-        )
-        timerViewModel.addTimer(currentTimer)
-    }
-    else {
-        currentTimer = timers.value!![0]
-        selectedMode = currentTimer.timerType
-        isRunning = currentTimer.isRunning
-        timeLeft = currentTimer.timeRemaining
-    }
+    if (timers.value.isNullOrEmpty()) timerViewModel.addTimer(currentTimer)
 
     val minutes = timeLeft / 60
-    val seconds = timeLeft % 60
+    val seconds = (timeLeft % 60).coerceAtLeast(0)
 
     fun updateUserXP(xpDelta: Int, onComplete: ((Boolean) -> Unit)? = null) {
         val currentUser = FirebaseAuth.getInstance().currentUser
@@ -136,13 +120,15 @@ fun TimerScreen(navController: NavController, timerViewModel: TimerViewModel) {
                                         currentTimer = pomodoroTimers.value!![0]
                                     }
                                     else timerViewModel.addTimerGivenType("Pomodoro")
-                                    }
+                                    timerViewModel.updateCurrentTimer(currentTimer.copy(timerType = "Pomodoro"))
+                                }
 
                                 if (selectedMode == "Break") {
                                     if (!breakTimers.value.isNullOrEmpty()) {
                                         currentTimer = breakTimers.value!![0]
                                     }
                                     else timerViewModel.addTimerGivenType("Break")
+                                    timerViewModel.updateCurrentTimer(currentTimer.copy(timerType = "Break"))
                                 }
                                 // isRunning = false
                             },
