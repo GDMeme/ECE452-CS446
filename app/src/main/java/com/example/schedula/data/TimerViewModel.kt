@@ -45,6 +45,22 @@ class TimerViewModel(private val repository: TimerRepository) : ViewModel() {
 //        _isRunning.value = newIsRunning
 //    }
 
+    fun cleanUpTimers() {
+        if (!pomodoroTimers.value.isNullOrEmpty()) {
+            if (pomodoroTimers.value?.size!! > 1)
+                for (i in 1..< pomodoroTimers.value?.size!!) {
+                    deleteTimer(pomodoroTimers.value!![i])
+                }
+        }
+
+        if (!breakTimers.value.isNullOrEmpty()) {
+            if (breakTimers.value?.size!! > 1)
+                for (i in 1..< breakTimers.value?.size!!) {
+                    deleteTimer(breakTimers.value!![i])
+                }
+        }
+    }
+
     fun runTimer(timer: Timer) {
         viewModelScope.launch {
             while (timer.isRunning && timer.timeRemaining >= 0 ) {
@@ -78,7 +94,17 @@ class TimerViewModel(private val repository: TimerRepository) : ViewModel() {
         viewModelScope.launch {
             val timerType = timer.timerType
             deleteTimer(timer)
-            addTimerGivenType(timerType)
+
+            if (timerType == "Pomodoro") {
+                if (pomodoroTimers.value.isNullOrEmpty())
+                    addTimerGivenType(timerType)
+                else updateCurrentTimer(pomodoroTimers.value!![0])
+            }
+            if (timerType == "Break") {
+                if (breakTimers.value.isNullOrEmpty())
+                    addTimerGivenType(timerType)
+                else updateCurrentTimer(breakTimers.value!![0])
+            }
         }
     }
 

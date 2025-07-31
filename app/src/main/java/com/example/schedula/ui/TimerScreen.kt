@@ -44,6 +44,8 @@ fun TimerScreen(navController: NavController, timerViewModel: TimerViewModel) {
     var taskInput by remember { mutableStateOf(TextFieldValue("")) }
     val taskList = remember { mutableStateListOf<String>() }
 
+    timerViewModel.cleanUpTimers()
+
     val timers = timerViewModel.timers.observeAsState()
     val pomodoroTimers = timerViewModel.pomodoroTimers.observeAsState()
     val breakTimers = timerViewModel.breakTimers.observeAsState()
@@ -51,11 +53,11 @@ fun TimerScreen(navController: NavController, timerViewModel: TimerViewModel) {
     var currentTimer = timerViewModel.currentTimer.observeAsState().value!!
     var selectedMode = currentTimer.timerType
     var isRunning = currentTimer.isRunning
-    var timeLeft = currentTimer.timeRemaining
+    val timeLeft = currentTimer.timeRemaining
 
     if (timers.value.isNullOrEmpty()) timerViewModel.addTimer(currentTimer)
 
-    val minutes = timeLeft / 60
+    val minutes = (timeLeft / 60).coerceAtLeast(0)
     val seconds = (timeLeft % 60).coerceAtLeast(0)
 
     fun updateUserXP(xpDelta: Int, onComplete: ((Boolean) -> Unit)? = null) {
@@ -100,7 +102,7 @@ fun TimerScreen(navController: NavController, timerViewModel: TimerViewModel) {
                     .border(1.dp, borderPurple, RoundedCornerShape(50))
             ) {
                 listOf("Pomodoro", "Break").forEachIndexed { index, mode ->
-                    val isSelected = selectedMode == mode
+                    val isSelected = currentTimer.timerType == mode
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -130,6 +132,7 @@ fun TimerScreen(navController: NavController, timerViewModel: TimerViewModel) {
                                     else timerViewModel.addTimerGivenType("Break")
                                     timerViewModel.updateCurrentTimer(currentTimer.copy(timerType = "Break"))
                                 }
+                                if (isRunning == true) timerViewModel.startTimer(currentTimer)
                                 // isRunning = false
                             },
                         contentAlignment = Alignment.Center
@@ -196,7 +199,7 @@ fun TimerScreen(navController: NavController, timerViewModel: TimerViewModel) {
                             }
                         }
                     }
-                    if (isRunning) timerViewModel.startTimer(currentTimer)
+                    if (currentTimer.isRunning == false) timerViewModel.startTimer(currentTimer)
                     else timerViewModel.pauseTimer(currentTimer)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = accentPurple),
